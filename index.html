@@ -895,10 +895,179 @@ function SettingsScreen({ state, onBack, onReset }) {
   );
 }
 
+const STATUS_STYLE = {
+  aging:  'bg-yellow-100 text-yellow-800 border-yellow-300',
+  ready:  'bg-green-100  text-green-800  border-green-300',
+  tested: 'bg-gray-100   text-gray-500   border-gray-200',
+};
+
+function StatusBadge({ status, onClick }) {
+  return (
+    <button onClick={onClick} disabled={!onClick}
+      className={classNames(
+        'rounded-full border px-2 py-0.5 text-xs font-semibold capitalize',
+        STATUS_STYLE[status] || STATUS_STYLE.aging,
+        onClick ? 'active:opacity-70' : 'cursor-default'
+      )}>
+      {status}
+    </button>
+  );
+}
+
 function FieldTab({ state, dispatch }) {
+  const [fieldView, setFieldView] = useState({ kind: 'home' });
+  const activeSession = state.sessions.find(s => s.ended_at === null);
+  const recipes = state.recipes;
+
+  // guard: if viewing session/rating but no active session exists, go home
+  if ((fieldView.kind === 'session' || fieldView.kind === 'rating') && !activeSession) {
+    setFieldView({ kind: 'home' });
+    return null;
+  }
+
+  if (fieldView.kind === 'start-session') {
+    return <StartSessionSheet
+      batches={state.batches}
+      recipes={recipes}
+      onCancel={() => setFieldView({ kind: 'home' })}
+      onCreate={(session) => {
+        dispatch({ type: 'ADD_SESSION', session });
+        setFieldView({ kind: 'session' });
+      }}
+    />;
+  }
+
+  if (fieldView.kind === 'session') {
+    return <ActiveSessionScreen
+      session={activeSession}
+      batches={state.batches}
+      recipes={recipes}
+      onRate={(batchId) => setFieldView({ kind: 'rating', batchId })}
+      onEnd={() => {
+        dispatch({ type: 'UPDATE_SESSION', session: { ...activeSession, ended_at: new Date().toISOString() } });
+        setFieldView({ kind: 'home' });
+      }}
+    />;
+  }
+
+  if (fieldView.kind === 'rating') {
+    const existing = activeSession?.batch_ratings?.find(r => r.batch_id === fieldView.batchId);
+    return <BatchRatingScreen
+      batchId={fieldView.batchId}
+      batches={state.batches}
+      recipes={recipes}
+      initialRating={existing}
+      onDone={(batchRating) => {
+        const updatedRatings = existing
+          ? activeSession.batch_ratings.map(r => r.batch_id === fieldView.batchId ? batchRating : r)
+          : [...(activeSession.batch_ratings || []), batchRating];
+        dispatch({ type: 'UPDATE_SESSION', session: { ...activeSession, batch_ratings: updatedRatings } });
+        const batch = state.batches.find(b => b.id === fieldView.batchId);
+        if (batch && batch.status !== 'tested') {
+          dispatch({ type: 'UPDATE_BATCH', batch: { ...batch, status: 'tested' } });
+        }
+        setFieldView({ kind: 'session' });
+      }}
+      onBack={() => setFieldView({ kind: 'session' })}
+    />;
+  }
+
+  // home view
+  const toggleStatus = (batch) => {
+    const next = batch.status === 'aging' ? 'ready' : 'aging';
+    dispatch({ type: 'UPDATE_BATCH', batch: { ...batch, status: next } });
+  };
+
+  const sorted = [...state.batches].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
   return (
     <div className="flex flex-col h-full">
       <Header title="Field" />
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 pt-4">
+          {activeSession ? (
+            <div className="rounded-xl border-2 border-black p-4 mb-4">
+              <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">Active session</div>
+              <div className="font-semibold capitalize">
+                {activeSession.conditions.weather} · {activeSession.conditions.wind} wind
+              </div>
+              <div className="text-sm text-gray-500 mt-0.5">
+                {activeSession.batch_ratings?.length || 0} / {activeSession.batch_ids?.length || 0} batches rated
+              </div>
+              <div className="mt-3">
+                <PrimaryBtn onClick={() => setFieldView({ kind: 'session' })}>Resume session</PrimaryBtn>
+              </div>
+            </div>
+          ) : (
+            <>
+              <PrimaryBtn
+                onClick={() => setFieldView({ kind: 'start-session' })}
+                disabled={state.batches.length === 0}>
+                + Start session
+              </PrimaryBtn>
+              {state.batches.length === 0 && (
+                <div className="text-sm text-gray-500 text-center mt-2">Make a batch from a recipe first.</div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="px-4 pt-5">
+          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+            Batches ({sorted.length})
+          </div>
+          {sorted.length === 0 ? (
+            <div className="text-sm text-gray-400 py-4 text-center">No batches yet.</div>
+          ) : (
+            <ul>
+              {sorted.map(b => {
+                const recipe = recipes.find(r => r.id === b.recipe_id);
+                return (
+                  <li key={b.id} className="flex items-center gap-3 py-3 border-b border-gray-100">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-base">
+                        #{b.number} · {recipe ? autoName(recipe) : 'Unknown recipe'}
+                      </div>
+                      <div className="text-sm text-gray-500">{b.volume_L}L · {fmtAge(b.created_at)} old</div>
+                      {b.notes ? <div className="text-xs text-gray-400 mt-0.5 truncate">{b.notes}</div> : null}
+                    </div>
+                    <StatusBadge
+                      status={b.status}
+                      onClick={b.status !== 'tested' ? () => toggleStatus(b) : null}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StartSessionSheet({ batches, recipes, onCancel, onCreate }) {
+  return (
+    <div className="flex flex-col h-full">
+      <Header left={<button onClick={onCancel} className="tap px-2 -ml-2 text-base">Cancel</button>} title="Start Session" />
+      <div className="flex-1 flex items-center justify-center text-gray-400">Coming soon</div>
+    </div>
+  );
+}
+
+function ActiveSessionScreen({ session, batches, recipes, onRate, onEnd }) {
+  return (
+    <div className="flex flex-col h-full">
+      <Header title="Session" right={<button onClick={onEnd} className="tap px-2 -mr-2 text-sm text-red-600 font-semibold">End</button>} />
+      <div className="flex-1 flex items-center justify-center text-gray-400">Coming soon</div>
+    </div>
+  );
+}
+
+function BatchRatingScreen({ batchId, batches, recipes, initialRating, onDone, onBack }) {
+  return (
+    <div className="flex flex-col h-full">
+      <Header left={<button onClick={onBack} className="tap px-2 -ml-2 text-base">‹ Back</button>} title="Rate batch" />
       <div className="flex-1 flex items-center justify-center text-gray-400">Coming soon</div>
     </div>
   );
