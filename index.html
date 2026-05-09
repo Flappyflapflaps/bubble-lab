@@ -468,6 +468,16 @@ function migrate(loaded) {
       seen.add(n);
       return true;
     });
+    // Step 3: Fix HEC rows incorrectly stored as dry powder (skip_convert: true)
+    recipes = recipes.map(r => ({
+      ...r,
+      rows: r.rows.map(row => {
+        if (row.role === 'polymer' && row.short === 'HEC' && row.skip_convert) {
+          return { ...row, skip_convert: false, label: row.label.replace('HEC Powder / ', '') };
+        }
+        return row;
+      }),
+    }));
     const seeds = seedRecipes();
     const existingNames = new Set(recipes.map(r => r.custom_name || autoName(r)));
     const toAdd = seeds.filter(s => {
