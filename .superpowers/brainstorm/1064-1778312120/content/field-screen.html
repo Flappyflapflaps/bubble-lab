@@ -1,0 +1,73 @@
+<h2>Field test screen layout</h2>
+<p class="subtitle">This is the screen you'd live on during a session. Which of these feels right for how you actually work?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:-apple-system,sans-serif;background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-size:12px;max-width:260px;margin:0 auto;">
+        <div style="background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:11px;color:#6b7280;">‹ Back</span>
+          <span style="font-weight:600;font-size:13px;">Batch #3 · SLES</span>
+          <span style="font-size:11px;color:#6b7280;">End</span>
+        </div>
+        <div style="padding:10px 14px;border-bottom:1px solid #f3f4f6;">
+          <div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Age</div>
+          <div style="font-weight:600;">2 days 4 hrs</div>
+        </div>
+        <div style="padding:10px 14px;display:flex;gap:8px;">
+          <button style="flex:1;background:#000;color:#fff;border:none;border-radius:10px;padding:10px 6px;font-size:12px;font-weight:600;">+ Add ingredient</button>
+          <button style="flex:1;background:#fff;border:2px solid #000;border-radius:10px;padding:10px 6px;font-size:12px;font-weight:600;">📝 Log obs.</button>
+        </div>
+        <div style="padding:4px 14px 10px;">
+          <button style="width:100%;background:#fff;border:1px solid #d1d5db;border-radius:10px;padding:8px;font-size:12px;color:#374151;">💧 Log pH</button>
+        </div>
+        <div style="padding:4px 14px 10px;border-top:1px solid #f3f4f6;">
+          <div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Timeline</div>
+          <div style="font-size:11px;color:#374151;padding:4px 0;border-bottom:1px solid #f3f4f6;">14:35 <span style="color:#16a34a;">✓ Spectral colors</span></div>
+          <div style="font-size:11px;color:#374151;padding:4px 0;border-bottom:1px solid #f3f4f6;">14:32 +5g CAPB-35</div>
+          <div style="font-size:11px;color:#374151;padding:4px 0;">14:25 <span style="color:#dc2626;">Brown from start</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Actions first, timeline below</h3>
+      <p>Big "Add" and "Log" buttons dominate the top. Timeline scrolls below. Age shown prominently. No ratio readout — keep it simple.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:-apple-system,sans-serif;background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-size:12px;max-width:260px;margin:0 auto;">
+        <div style="background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:11px;color:#6b7280;">‹ Back</span>
+          <span style="font-weight:600;font-size:13px;">Batch #3 · SLES</span>
+          <span style="font-size:11px;color:#6b7280;">End</span>
+        </div>
+        <div style="padding:10px 14px;border-bottom:1px solid #f3f4f6;display:flex;gap:12px;">
+          <div><div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;">Age</div><div style="font-weight:600;font-size:13px;">2d 4h</div></div>
+          <div><div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;">pH</div><div style="font-weight:600;font-size:13px;">7.0</div></div>
+          <div><div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;">Volume</div><div style="font-weight:600;font-size:13px;">2L</div></div>
+        </div>
+        <div style="padding:8px 14px;border-bottom:1px solid #f3f4f6;">
+          <div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Timeline</div>
+          <div style="font-size:11px;color:#374151;padding:4px 0;border-bottom:1px solid #f3f4f6;">14:35 <span style="color:#16a34a;">✓ Spectral colors</span></div>
+          <div style="font-size:11px;color:#374151;padding:4px 0;border-bottom:1px solid #f3f4f6;">14:32 +5g CAPB-35</div>
+          <div style="font-size:11px;color:#374151;padding:4px 0;">14:25 <span style="color:#dc2626;">Brown from start</span></div>
+        </div>
+        <div style="padding:10px 14px;display:flex;gap:8px;position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;">
+          <button style="flex:1;background:#000;color:#fff;border:none;border-radius:10px;padding:10px 6px;font-size:12px;font-weight:600;">+ Add</button>
+          <button style="flex:1;background:#fff;border:2px solid #000;border-radius:10px;padding:10px 6px;font-size:12px;font-weight:600;">📝 Obs</button>
+          <button style="flex:1;background:#fff;border:1px solid #d1d5db;border-radius:10px;padding:10px 6px;font-size:12px;color:#374151;">💧 pH</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Stats bar + scrolling timeline + sticky action bar</h3>
+      <p>Compact stats (age, pH, volume) at top. Timeline is the main body. Three actions pinned to the bottom. Good for reviewing what happened.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Click one, then let me know in the terminal. Or describe what's missing.</p>

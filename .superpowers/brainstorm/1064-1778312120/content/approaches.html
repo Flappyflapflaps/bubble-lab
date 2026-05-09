@@ -1,0 +1,50 @@
+<h2>Three approaches to the data model</h2>
+<p class="subtitle">How sessions, batches, and ratings relate to each other</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Session → Batches (recommended)</h3>
+      <p>A <strong>Session</strong> is the top-level field event: you log weather once, then rate as many batches as you test that day. History tab shows sessions. Each session has a conditions block + a list of batch ratings.</p>
+      <div style="margin-top:8px;font-size:12px;background:#f3f4f6;border-radius:8px;padding:10px;line-height:1.6;">
+        Session #4 — 09 May 2026, mild, 18°C<br>
+        &nbsp;&nbsp;├ Batch #3 (SLES, 4 days old) → rated<br>
+        &nbsp;&nbsp;└ Batch #5 (AOS, 1 day old) → rated
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:#6b7280;">Clean for comparison. Conditions recorded once per outing.</div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Ratings directly on batches</h3>
+      <p>No session concept. Each batch can have multiple rating entries (one per time you test it). Weather is logged per rating entry, not per session.</p>
+      <div style="margin-top:8px;font-size:12px;background:#f3f4f6;border-radius:8px;padding:10px;line-height:1.6;">
+        Batch #3 (SLES)<br>
+        &nbsp;&nbsp;├ Rating on 09 May — mild, 18°C → rated<br>
+        &nbsp;&nbsp;└ Rating on 11 May — cold, 10°C → rated
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:#6b7280;">Simpler. But if you test 3 batches on the same day you enter the weather 3 times.</div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Session → one batch only</h3>
+      <p>Sessions exist but each session tests exactly one batch. Simpler session model, but you'd need to create a new session to switch batches mid-outing.</p>
+      <div style="margin-top:8px;font-size:12px;background:#f3f4f6;border-radius:8px;padding:10px;line-height:1.6;">
+        Session A — Batch #3, mild → rated<br>
+        Session B — Batch #5, mild → rated<br>
+        <span style="color:#9ca3af;">(same day, same weather, entered twice)</span>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:#6b7280;">Least flexible. Not worth the extra friction.</div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">I'd recommend A — click it and confirm in terminal, or pick B/C if that fits better.</p>

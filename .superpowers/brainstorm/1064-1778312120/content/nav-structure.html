@@ -1,0 +1,66 @@
+<h2>Navigation structure</h2>
+<p class="subtitle">The app currently has a flat recipe list. As we add field mode, how should the top-level navigation work?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family: -apple-system, sans-serif; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; font-size: 13px;">
+        <div style="background: #fff; border-bottom: 1px solid #e5e7eb; padding: 12px 16px; font-weight: 600; font-size: 15px; text-align: center;">Bubble Lab</div>
+        <div style="padding: 12px 16px;">
+          <div style="background: #f3f4f6; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">📋 SLES: 0.05g PAM &amp; 0.1g PEO</div>
+          <div style="background: #f3f4f6; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">📋 AOS: 0.125g PEO &amp; 0.25g HEC</div>
+        </div>
+        <div style="border-top: 1px solid #e5e7eb; display: flex; padding: 0;">
+          <div style="flex: 1; padding: 10px; text-align: center; border-bottom: 3px solid #000; font-weight: 600; font-size: 12px;">Recipes</div>
+          <div style="flex: 1; padding: 10px; text-align: center; color: #6b7280; font-size: 12px;">Field</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Two tabs: Recipes + Field</h3>
+      <p>Bottom tab bar. Recipes tab = current app (list → checklist). Field tab = start/continue a field test. Simple and direct.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family: -apple-system, sans-serif; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; font-size: 13px;">
+        <div style="background: #fff; border-bottom: 1px solid #e5e7eb; padding: 12px 16px; font-weight: 600; font-size: 15px; text-align: center;">Bubble Lab</div>
+        <div style="padding: 12px 16px;">
+          <div style="background: #f3f4f6; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">📋 SLES: 0.05g PAM &amp; 0.1g PEO</div>
+          <div style="background: #f3f4f6; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">📋 AOS: 0.125g PEO &amp; 0.25g HEC</div>
+        </div>
+        <div style="border-top: 1px solid #e5e7eb; display: flex; padding: 0;">
+          <div style="flex: 1; padding: 10px; text-align: center; border-bottom: 3px solid #000; font-weight: 600; font-size: 12px;">Recipes</div>
+          <div style="flex: 1; padding: 10px; text-align: center; color: #6b7280; font-size: 12px;">Field</div>
+          <div style="flex: 1; padding: 10px; text-align: center; color: #6b7280; font-size: 12px;">History</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Three tabs: Recipes + Field + History</h3>
+      <p>Same as A but with a dedicated History tab for reviewing past field tests. Useful if you'll compare runs frequently.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family: -apple-system, sans-serif; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; font-size: 13px;">
+        <div style="background: #fff; border-bottom: 1px solid #e5e7eb; padding: 12px 16px; font-weight: 600; font-size: 15px; text-align: center;">Bubble Lab</div>
+        <div style="padding: 12px 16px;">
+          <div style="background: #f3f4f6; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">📋 SLES: 0.05g PAM &amp; 0.1g PEO</div>
+          <div style="background: #f3f4f6; border-radius: 8px; padding: 8px 12px;">📋 AOS: 0.125g PEO &amp; 0.25g HEC</div>
+          <div style="margin-top: 12px; background: #000; color: #fff; border-radius: 10px; padding: 12px; text-align: center; font-weight: 600;">🧪 Start Field Test</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — No tabs, recipe-first</h3>
+      <p>No tab bar. You access field mode by opening a recipe and pressing "Start Field Test." Simpler, but field mode isn't directly reachable from anywhere.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top: 16px;">Click one, then tell me in the terminal.</p>
