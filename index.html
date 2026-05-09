@@ -1158,10 +1158,68 @@ function StartSessionSheet({ batches, recipes, onCancel, onCreate }) {
 }
 
 function ActiveSessionScreen({ session, batches, recipes, onRate, onEnd }) {
+  const sessionBatches = (session.batch_ids || [])
+    .map(id => batches.find(b => b.id === id))
+    .filter(Boolean);
+
   return (
     <div className="flex flex-col h-full">
-      <Header title="Session" right={<button onClick={onEnd} className="tap px-2 -mr-2 text-sm text-red-600 font-semibold">End</button>} />
-      <div className="flex-1 flex items-center justify-center text-gray-400">Coming soon</div>
+      <Header
+        title="Active Session"
+        right={
+          <button
+            onClick={() => { if (window.confirm('End this session?')) onEnd(); }}
+            className="tap px-2 -mr-2 text-sm text-red-600 font-semibold">
+            End
+          </button>
+        }
+      />
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 pt-4 pb-3 border-b border-gray-100">
+          <div className="flex gap-2 flex-wrap">
+            <span className="rounded-full border border-gray-300 px-3 py-1 text-sm capitalize">
+              {session.conditions.weather}
+            </span>
+            <span className="rounded-full border border-gray-300 px-3 py-1 text-sm capitalize">
+              {session.conditions.wind} wind
+            </span>
+          </div>
+          <div className="text-xs text-gray-400 mt-2">
+            {new Date(session.started_at).toLocaleString()}
+          </div>
+        </div>
+
+        <div className="px-4 pt-4">
+          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Batches</div>
+          <ul>
+            {sessionBatches.map(b => {
+              const recipe = recipes.find(r => r.id === b.recipe_id);
+              const batchRating = session.batch_ratings?.find(r => r.batch_id === b.id);
+              const rated = ratingCount(batchRating);
+              return (
+                <li key={b.id}>
+                  <button onClick={() => onRate(b.id)}
+                    className="w-full flex items-center gap-3 py-4 border-b border-gray-100 text-left active:bg-gray-50">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-base">
+                        #{b.number} · {recipe ? autoName(recipe) : 'Unknown'}
+                      </div>
+                      <div className="text-sm text-gray-500">{b.volume_L}L · {fmtAge(b.created_at)} old</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-semibold">
+                        {rated} / {RATING_PROPERTIES.length}
+                      </div>
+                      <div className="text-xs text-gray-400">rated ›</div>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <div className="h-8" />
+      </div>
     </div>
   );
 }
