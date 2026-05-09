@@ -1366,10 +1366,267 @@ function BatchRatingScreen({ batchId, batches, recipes, initialRating, onDone, o
 }
 
 function HistoryTab({ state }) {
+  const [segment, setSegment] = React.useState('sessions');
+  const [sessionDetail, setSessionDetail] = React.useState(null); // session object or null
+  const [rankingDetail, setRankingDetail] = React.useState(null); // ranking object or null
+  const [weatherFilter, setWeatherFilter] = React.useState('all');
+
+  // Sessions segment
+  const endedSessions = React.useMemo(() =>
+    [...state.sessions]
+      .filter(s => s.ended_at !== null)
+      .sort((a, b) => new Date(b.ended_at) - new Date(a.ended_at)),
+    [state.sessions]
+  );
+
+  // Rankings segment
+  const rankings = React.useMemo(() =>
+    computeRankings(state.recipes, state.batches, state.sessions, weatherFilter),
+    [state.recipes, state.batches, state.sessions, weatherFilter]
+  );
+
+  // Session detail view
+  if (sessionDetail) {
+    const s = sessionDetail;
+    return (
+      <div className="flex flex-col h-full">
+        <Header
+          left={
+            <button onClick={() => setSessionDetail(null)} className="tap px-2 -ml-2 text-base">
+              ‹ Sessions
+            </button>
+          }
+          title={new Date(s.ended_at).toLocaleDateString()}
+        />
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-4 pt-3 pb-3 border-b border-gray-100 flex gap-2 flex-wrap">
+            <span className="rounded-full border border-gray-300 px-3 py-1 text-sm capitalize">
+              {s.conditions.weather}
+            </span>
+            <span className="rounded-full border border-gray-300 px-3 py-1 text-sm capitalize">
+              {s.conditions.wind} wind
+            </span>
+          </div>
+          {s.batch_ratings.length === 0 ? (
+            <div className="text-center py-10 text-gray-400 text-sm">No batches rated in this session.</div>
+          ) : (
+            s.batch_ratings.map(br => {
+              const batch = state.batches.find(b => b.id === br.batch_id);
+              const recipe = batch ? state.recipes.find(r => r.id === batch.recipe_id) : null;
+              return (
+                <div key={br.id} className="px-4 pt-4 pb-3 border-b border-gray-100">
+                  <div className="font-semibold text-base mb-2">
+                    {batch ? `Batch #${batch.number}` : 'Unknown batch'}
+                    {recipe ? ` · ${autoName(recipe)}` : ''}
+                  </div>
+                  {RATING_PROPERTIES.map(prop => {
+                    const entry = br.ratings?.[prop.key];
+                    return (
+                      <div key={prop.key} className="flex items-center justify-between py-1">
+                        <span className="text-sm text-gray-600">{prop.label}</span>
+                        <span className="text-sm font-medium tabular-nums">
+                          {entry?.stars != null ? `${entry.stars}★` : '—'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {br.overall_note ? (
+                    <div className="mt-2 text-sm text-gray-500 italic">{br.overall_note}</div>
+                  ) : null}
+                </div>
+              );
+            })
+          )}
+          <div className="h-8" />
+        </div>
+      </div>
+    );
+  }
+
+  // Ranking detail view
+  if (rankingDetail) {
+    const rd = rankingDetail;
+    const recipe = state.recipes.find(r => r.id === rd.recipeId);
+    // Collect qualifying batch_ratings for this recipe
+    const qualifyingRatings = state.sessions
+      .filter(s => s.ended_at !== null && (weatherFilter === 'all' || s.conditions.weather === weatherFilter))
+      .flatMap(s => (s.batch_ratings || []).map(br => ({ br, session: s })))
+      .filter(({ br }) => {
+        const batch = state.batches.find(b => b.id === br.batch_id);
+        return batch && batch.recipe_id === rd.recipeId;
+      });
+
+    return (
+      <div className="flex flex-col h-full">
+        <Header
+          left={
+            <button onClick={() => setRankingDetail(null)} className="tap px-2 -ml-2 text-base">
+              ‹ Rankings
+            </button>
+          }
+          title={recipe ? autoName(recipe) : 'Recipe'}
+        />
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-4 pt-4 pb-2 border-b border-gray-100">
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Per-property averages</div>
+            {RATING_PROPERTIES.map(prop => {
+              const stars = qualifyingRatings.flatMap(({ br }) => {
+                const entry = br.ratings?.[prop.key];
+                return entry?.stars != null ? [entry.stars] : [];
+              });
+              const avg = stars.length
+                ? (stars.reduce((a, b) => a + b, 0) / stars.length).toFixed(1)
+                : '—';
+              return (
+                <div key={prop.key} className="flex items-center justify-between py-1.5">
+                  <span className="text-sm text-gray-700">{prop.label}</span>
+                  <span className="text-sm font-semibold tabular-nums">
+                    {avg !== '—' ? `${avg}★` : '—'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="px-4 pt-4 pb-2">
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">
+              Contributing sessions ({qualifyingRatings.length})
+            </div>
+            {qualifyingRatings.length === 0 ? (
+              <div className="text-sm text-gray-400">No data.</div>
+            ) : (
+              qualifyingRatings.map(({ br, session }, idx) => {
+                const batch = state.batches.find(b => b.id === br.batch_id);
+                const recipeName = recipe ? autoName(recipe) : 'Unknown';
+                return (
+                  <div key={idx} className="py-3 border-b border-gray-100">
+                    <div className="text-sm font-semibold">
+                      {batch ? `Batch #${batch.number}` : 'Unknown batch'} · {recipeName}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {new Date(session.ended_at).toLocaleDateString()} · {session.conditions.weather} / {session.conditions.wind} wind
+                    </div>
+                    {br.overall_note ? (
+                      <div className="text-xs text-gray-400 italic mt-0.5">{br.overall_note}</div>
+                    ) : null}
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <div className="h-8" />
+        </div>
+      </div>
+    );
+  }
+
+  // Main history view
   return (
     <div className="flex flex-col h-full">
       <Header title="History" />
-      <div className="flex-1 flex items-center justify-center text-gray-400">Coming soon</div>
+
+      {/* Segmented control */}
+      <div className="flex bg-gray-100 rounded-full p-1 self-start mx-4 my-3">
+        {[['sessions', 'Sessions'], ['rankings', 'Rankings']].map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setSegment(id)}
+            className={classNames(
+              'px-4 py-1 text-sm font-semibold rounded-full transition-colors',
+              segment === id ? 'bg-black text-white' : 'text-gray-500'
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {segment === 'sessions' && (
+        <div className="flex-1 overflow-y-auto">
+          {endedSessions.length === 0 ? (
+            <div className="text-center py-16 text-gray-400">No sessions yet.</div>
+          ) : (
+            <ul>
+              {endedSessions.map(s => (
+                <li key={s.id}>
+                  <button
+                    onClick={() => setSessionDetail(s)}
+                    className="w-full text-left px-4 py-4 border-b border-gray-200 active:bg-gray-50 flex items-center justify-between gap-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-base">
+                        {new Date(s.ended_at).toLocaleDateString()}
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap mt-1">
+                        <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-600 capitalize">
+                          {s.conditions.weather} · {s.conditions.wind} wind
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        {s.batch_ratings.length} batch{s.batch_ratings.length !== 1 ? 'es' : ''} tested
+                      </div>
+                    </div>
+                    <span className="text-gray-400 text-lg shrink-0">›</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {segment === 'rankings' && (
+        <div className="flex-1 overflow-y-auto">
+          {/* Weather filter */}
+          <div className="flex gap-2 px-4 pb-3 flex-wrap">
+            {['all', 'cold', 'mild', 'warm', 'hot'].map(w => (
+              <button
+                key={w}
+                onClick={() => setWeatherFilter(w)}
+                className={classNames(
+                  'px-3 py-1 rounded-full text-sm font-medium capitalize',
+                  weatherFilter === w ? 'bg-black text-white' : 'bg-gray-100 text-gray-700'
+                )}
+              >
+                {w === 'all' ? 'All' : w}
+              </button>
+            ))}
+          </div>
+
+          {rankings.length === 0 ? (
+            <div className="text-center py-16 text-gray-400">No ratings yet.</div>
+          ) : (
+            <ul>
+              {rankings.map((rd, idx) => {
+                const recipe = state.recipes.find(r => r.id === rd.recipeId);
+                return (
+                  <li key={rd.recipeId}>
+                    <button
+                      onClick={() => setRankingDetail(rd)}
+                      className="w-full text-left px-4 py-4 border-b border-gray-200 active:bg-gray-50 flex items-center gap-3"
+                    >
+                      <div className="text-lg font-bold text-gray-400 tabular-nums w-8 shrink-0">
+                        #{idx + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-base truncate">
+                          {recipe ? autoName(recipe) : 'Unknown recipe'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {rd.batchCount} batch{rd.batchCount !== 1 ? 'es' : ''}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="font-bold tabular-nums">{rd.avgScore.toFixed(1)}★</div>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }
