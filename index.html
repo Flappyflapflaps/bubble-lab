@@ -42,7 +42,7 @@ const { useState, useEffect, useMemo, useReducer } = React;
    ============================================================ */
 
 const STORAGE_KEY = 'bubble-lab-v1';
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 const SURFACTANTS = ['SLES', 'AOS', 'CAPB', 'LDAO'];
 const POLYMERS = ['PEO', 'PAM', 'HEC'];
@@ -55,6 +55,14 @@ const COMMON_OTHERS = [
   'Potassium sorbate',
   'Dipotassium phosphate',
   'Lactic acid 80%',
+];
+
+const DEFAULT_CONCENTRATES = [
+  { id: 'conc-hec',    name: 'HEC',         gPerML: 0.021,  aqueous: true  },
+  { id: 'conc-pam',    name: 'PAM',         gPerML: 0.0005, aqueous: true  },
+  { id: 'conc-peo',    name: 'PEO',         gPerML: 0.002,  aqueous: true  },
+  { id: 'conc-jlube',  name: 'J Lube',      gPerML: 0.008,  aqueous: true  },
+  { id: 'conc-sorbic', name: 'Sorbic acid', gPerML: 0.0671, aqueous: false },
 ];
 
 const RATING_PROPERTIES = [
@@ -79,6 +87,16 @@ const POLY_ORDER    = { PAM: 0, PEO: 1, HEC: 2 };
 function uuid() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function findConcentrate(row, concentrates) {
+  if (!concentrates || !concentrates.length) return null;
+  const short = (row.short || '').toLowerCase().trim();
+  const label = (row.label || '').toLowerCase().trim();
+  return concentrates.find(c => {
+    const name = c.name.toLowerCase().trim();
+    return (short && short === name) || label.includes(name);
+  }) || null;
 }
 
 function round(v, sig = 4) {
@@ -278,9 +296,10 @@ function migrate(loaded) {
   if (!loaded) return {
     version: SCHEMA_VERSION, recipes: seedRecipes(),
     batches: [], sessions: [], next_batch_number: 1,
+    concentrates: DEFAULT_CONCENTRATES,
   };
 
-  // v2 data: recipes already have rows array
+  // v2/v3 data: recipes already have rows array
   if ((loaded.recipes || []).every(r => Array.isArray(r.rows))) {
     return {
       version: SCHEMA_VERSION,
@@ -288,6 +307,7 @@ function migrate(loaded) {
       batches: loaded.batches || [],
       sessions: loaded.sessions || [],
       next_batch_number: loaded.next_batch_number || 1,
+      concentrates: loaded.concentrates || DEFAULT_CONCENTRATES,
     };
   }
 
@@ -334,6 +354,7 @@ function migrate(loaded) {
     version: SCHEMA_VERSION,
     recipes: [...migrated, ...toAdd],
     batches: [], sessions: [], next_batch_number: 1,
+    concentrates: DEFAULT_CONCENTRATES,
   };
 }
 
@@ -356,7 +377,19 @@ function reducer(state, a) {
       return { ...state, sessions: [...state.sessions, a.session] };
     case 'UPDATE_SESSION':
       return { ...state, sessions: state.sessions.map(s => s.id === a.session.id ? a.session : s) };
-    case 'RESET':         return { version: SCHEMA_VERSION, recipes: seedRecipes(), batches: [], sessions: [], next_batch_number: 1 };
+    case 'RESET': return {
+      version: SCHEMA_VERSION,
+      recipes: seedRecipes(),
+      batches: [], sessions: [],
+      next_batch_number: 1,
+      concentrates: DEFAULT_CONCENTRATES,
+    };
+    case 'ADD_CONCENTRATE':
+      return { ...state, concentrates: [...(state.concentrates || []), a.concentrate] };
+    case 'UPDATE_CONCENTRATE':
+      return { ...state, concentrates: (state.concentrates || []).map(c => c.id === a.concentrate.id ? a.concentrate : c) };
+    case 'DELETE_CONCENTRATE':
+      return { ...state, concentrates: (state.concentrates || []).filter(c => c.id !== a.id) };
     default: return state;
   }
 }
