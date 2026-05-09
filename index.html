@@ -407,8 +407,6 @@ function migrate(loaded) {
     concentrates: DEFAULT_CONCENTRATES,
   };
 
-  if (loaded.version === SCHEMA_VERSION) return loaded;
-
   // v2/v3 data: recipes already have rows array
   if ((loaded.recipes || []).every(r => Array.isArray(r.rows))) {
     const seeds = seedRecipes();
