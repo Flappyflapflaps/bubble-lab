@@ -57,6 +57,17 @@ const COMMON_OTHERS = [
   'Lactic acid 80%',
 ];
 
+const RATING_PROPERTIES = [
+  { key: 'thickness',      label: 'Thickness',      section: 'Mixture' },
+  { key: 'stringiness',    label: 'Stringiness',    section: 'Mixture' },
+  { key: 'expansion_rate', label: 'Expansion rate', section: 'Bubble' },
+  { key: 'closure_rate',   label: 'Closure rate',   section: 'Bubble' },
+  { key: 'tube_length',    label: 'Tube length',    section: 'Bubble' },
+  { key: 'size',           label: 'Size',           section: 'Bubble' },
+  { key: 'weight',         label: 'Weight',         section: 'Bubble' },
+  { key: 'ghosting',       label: 'Ghosting',       section: 'Other'  },
+];
+
 // Lower number = higher priority for naming prefix
 const SURF_PRIORITY = { SLES: 0, AOS: 1, CAPB: 2, LDAO: 3 };
 const POLY_ORDER    = { PAM: 0, PEO: 1, HEC: 2 };
@@ -93,6 +104,71 @@ function fmtNum(n) {
 function fmtG(v) {
   if (v == null || isNaN(v)) return '—';
   return fmtNum(v) + ' g';
+}
+
+function fmtAge(createdAt) {
+  const ms = Date.now() - new Date(createdAt).getTime();
+  const totalMins = Math.floor(ms / 60000);
+  const days = Math.floor(totalMins / 1440);
+  const hrs  = Math.floor((totalMins % 1440) / 60);
+  if (days > 0) return `${days}d ${hrs}h`;
+  if (hrs > 0) return `${hrs}h`;
+  return `${totalMins}m`;
+}
+
+function ratingCount(batchRating) {
+  if (!batchRating || !batchRating.ratings) return 0;
+  return RATING_PROPERTIES.filter(p => batchRating.ratings[p.key]?.stars != null).length;
+}
+
+function avgScore(batchRating) {
+  if (!batchRating || !batchRating.ratings) return null;
+  const vals = RATING_PROPERTIES.map(p => batchRating.ratings[p.key]?.stars).filter(v => v != null);
+  if (vals.length === 0) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function emptyRatings() {
+  const r = {};
+  for (const p of RATING_PROPERTIES) r[p.key] = { stars: null, note: '' };
+  return r;
+}
+
+function computeRankings(recipes, batches, sessions, weatherFilter) {
+  const eligible = sessions.filter(s =>
+    s.ended_at !== null && (weatherFilter === 'all' || s.conditions.weather === weatherFilter)
+  );
+  const map = {};
+  for (const session of eligible) {
+    for (const br of (session.batch_ratings || [])) {
+      const batch = batches.find(b => b.id === br.batch_id);
+      if (!batch) continue;
+      const rid = batch.recipe_id;
+      if (!map[rid]) map[rid] = { recipeId: rid, scores: [], perProperty: {}, batchEntries: [] };
+      const vals = RATING_PROPERTIES.map(p => br.ratings?.[p.key]?.stars).filter(v => v != null);
+      if (vals.length === 0) continue;
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      map[rid].scores.push(avg);
+      for (const p of RATING_PROPERTIES) {
+        const s = br.ratings?.[p.key]?.stars;
+        if (s != null) {
+          if (!map[rid].perProperty[p.key]) map[rid].perProperty[p.key] = [];
+          map[rid].perProperty[p.key].push(s);
+        }
+      }
+      map[rid].batchEntries.push({ batchNumber: batch.number, avg, date: session.ended_at, conditions: session.conditions });
+    }
+  }
+  return Object.values(map)
+    .map(e => ({
+      recipeId: e.recipeId,
+      avgScore: e.scores.length ? e.scores.reduce((a, b) => a + b, 0) / e.scores.length : null,
+      batchCount: e.scores.length,
+      perProperty: e.perProperty,
+      batchEntries: e.batchEntries,
+    }))
+    .filter(e => e.avgScore !== null)
+    .sort((a, b) => b.avgScore - a.avgScore);
 }
 
 function classNames(...xs) { return xs.filter(Boolean).join(' '); }
