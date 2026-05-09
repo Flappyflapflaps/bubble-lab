@@ -34,6 +34,8 @@
   .sheet-enter { animation: slide-up 180ms ease-out; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+  .hide-scrollbar { scrollbar-width: none; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
 </style>
 </head>
 <body>
@@ -383,6 +385,35 @@ function seedRecipes() {
         { id: uuid(), role: 'surfactant', label: 'LDAO-30',                  grams_per_L: 8.0,    active_g_per_L: null, short: 'LDAO', skip_convert: false },
       ],
     },
+    {
+      id: uuid(),
+      custom_name: 'Test 1: The Fairy Liquid Version (1-Liter HECWSR)',
+      notes: '',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Warm Water',                  grams_per_L: 942.5, active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'Aged PEO Concentrate',        grams_per_L: 57.5,  active_g_per_L: 0.115, short: 'PEO',   skip_convert: true  },
+        { id: uuid(), role: 'polymer',    label: 'HEC Powder / Natrosol 250HR', grams_per_L: 1.92,  active_g_per_L: 1.92,  short: 'HEC',   skip_convert: true  },
+        { id: uuid(), role: 'other',      label: 'Baking Soda',                 grams_per_L: 1.1,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Citric Acid',                 grams_per_L: 0.55,  active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'Fairy Liquid',                grams_per_L: 49.3,  active_g_per_L: null,  short: null,    skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'Test 2: The SLES Version (1-Liter HECWSR)',
+      notes: 'Pre-dissolve SLES 70% Paste in a small amount of the warm water before adding.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Warm Water',                  grams_per_L: 942.5, active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Dipotassium Phosphate',       grams_per_L: 1.84,  active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Sorbic Acid Concentrate',     grams_per_L: 15.3,  active_g_per_L: null,  short: null,    skip_convert: true  },
+        { id: uuid(), role: 'other',      label: 'Additional Isopropyl Alcohol',grams_per_L: 25.9,  active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'Aged PEO Concentrate',        grams_per_L: 57.5,  active_g_per_L: 0.115, short: 'PEO',   skip_convert: true  },
+        { id: uuid(), role: 'polymer',    label: 'HEC Powder / Natrosol 250HR', grams_per_L: 1.92,  active_g_per_L: 1.92,  short: 'HEC',   skip_convert: true  },
+        { id: uuid(), role: 'surfactant', label: 'SLES 70% Paste',             grams_per_L: 35.0,  active_g_per_L: null,  short: 'SLES',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'CAPB',                        grams_per_L: 12.0,  active_g_per_L: null,  short: 'CAPB',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'LDAO',                        grams_per_L: 8.0,   active_g_per_L: null,  short: 'LDAO',  skip_convert: false },
+      ],
+    },
   ];
 }
 
@@ -598,8 +629,51 @@ function TabBar({ tab, setTab }) {
    RECIPE LIST
    ============================================================ */
 
+function getSurfGroup(recipe) {
+  for (const r of recipe.rows) {
+    if (r.role !== 'surfactant') continue;
+    if (r.short === 'AOS') return 'AOS';
+    if (r.short === 'SLES') return 'SLES';
+    if (r.label && r.label.toLowerCase().includes('fairy')) return 'Fairy';
+  }
+  return 'Other';
+}
+
+function getPolyGroup(recipe) {
+  const shorts = recipe.rows.filter(r => r.role === 'polymer').map(r => r.short);
+  if (shorts.includes('J Lube')) return 'J-Lube';
+  if (shorts.includes('HEC')) return 'HEC';
+  return 'Other';
+}
+
 function RecipeList({ recipes, onOpen, onNew, onResetAll, onSettings }) {
+  const [surfFilter, setSurfFilter] = React.useState('All');
+  const [polyFilter, setPolyFilter] = React.useState('All');
+
   const sorted = useMemo(() => [...recipes].sort((a, b) => autoName(a).localeCompare(autoName(b))), [recipes]);
+
+  const filtered = useMemo(() => sorted.filter(r => {
+    if (surfFilter !== 'All' && getSurfGroup(r) !== surfFilter) return false;
+    if (polyFilter !== 'All' && getPolyGroup(r) !== polyFilter) return false;
+    return true;
+  }), [sorted, surfFilter, polyFilter]);
+
+  const SURF_OPTS = ['All', 'AOS', 'SLES', 'Fairy'];
+  const POLY_OPTS = ['All', 'J-Lube', 'HEC'];
+
+  function FilterPill({ label, active, onClick }) {
+    return (
+      <button
+        onClick={onClick}
+        className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+          active ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 active:bg-gray-200'
+        }`}
+      >
+        {label}
+      </button>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       <Header
@@ -607,6 +681,18 @@ function RecipeList({ recipes, onOpen, onNew, onResetAll, onSettings }) {
         title="Recipes"
         right={<button onClick={onNew} className="tap px-3 -mr-3 text-base font-semibold">+ New</button>}
       />
+      <div className="px-4 pt-3 pb-2 border-b border-gray-200 space-y-2 flex-shrink-0">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+          {SURF_OPTS.map(o => (
+            <FilterPill key={o} label={o} active={surfFilter === o} onClick={() => setSurfFilter(o)} />
+          ))}
+        </div>
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+          {POLY_OPTS.map(o => (
+            <FilterPill key={o} label={o} active={polyFilter === o} onClick={() => setPolyFilter(o)} />
+          ))}
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto">
         {sorted.length === 0 ? (
           <div className="text-center py-16 px-4">
@@ -617,9 +703,11 @@ function RecipeList({ recipes, onOpen, onNew, onResetAll, onSettings }) {
               <PrimaryBtn onClick={onNew}>+ New recipe</PrimaryBtn>
             </div>
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 px-4 text-sm text-gray-400">No recipes match these filters</div>
         ) : (
           <ul>
-            {sorted.map(r => (
+            {filtered.map(r => (
               <li key={r.id}>
                 <button onClick={() => onOpen(r.id)} className="w-full text-left px-4 py-4 border-b border-gray-200 active:bg-gray-50">
                   <div className="font-semibold text-base">{autoName(r)}</div>
