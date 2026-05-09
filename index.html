@@ -144,19 +144,11 @@ function computeRankings(recipes, batches, sessions, weatherFilter) {
       const batch = batches.find(b => b.id === br.batch_id);
       if (!batch) continue;
       const rid = batch.recipe_id;
-      if (!map[rid]) map[rid] = { recipeId: rid, scores: [], perProperty: {}, batchEntries: [] };
+      if (!map[rid]) map[rid] = { recipeId: rid, scores: [] };
       const vals = RATING_PROPERTIES.map(p => br.ratings?.[p.key]?.stars).filter(v => v != null);
       if (vals.length === 0) continue;
       const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
       map[rid].scores.push(avg);
-      for (const p of RATING_PROPERTIES) {
-        const s = br.ratings?.[p.key]?.stars;
-        if (s != null) {
-          if (!map[rid].perProperty[p.key]) map[rid].perProperty[p.key] = [];
-          map[rid].perProperty[p.key].push(s);
-        }
-      }
-      map[rid].batchEntries.push({ batchNumber: batch.number, avg, date: session.ended_at, conditions: session.conditions });
     }
   }
   return Object.values(map)
@@ -164,8 +156,6 @@ function computeRankings(recipes, batches, sessions, weatherFilter) {
       recipeId: e.recipeId,
       avgScore: e.scores.length ? e.scores.reduce((a, b) => a + b, 0) / e.scores.length : null,
       batchCount: e.scores.length,
-      perProperty: e.perProperty,
-      batchEntries: e.batchEntries,
     }))
     .filter(e => e.avgScore !== null)
     .sort((a, b) => b.avgScore - a.avgScore);
@@ -1558,9 +1548,8 @@ function HistoryTab({ state }) {
                         {new Date(s.ended_at).toLocaleDateString()}
                       </div>
                       <div className="flex gap-1.5 flex-wrap mt-1">
-                        <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-600 capitalize">
-                          {s.conditions.weather} · {s.conditions.wind} wind
-                        </span>
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full capitalize">{s.conditions.weather}</span>
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full capitalize">{s.conditions.wind} wind</span>
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
                         {s.batch_ratings.length} batch{s.batch_ratings.length !== 1 ? 'es' : ''} tested
