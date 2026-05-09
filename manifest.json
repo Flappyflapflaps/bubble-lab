@@ -1,0 +1,18 @@
+{
+  "name": "Bubble Lab",
+  "short_name": "Bubble Lab",
+  "description": "Giant bubble formulation recipes and field session tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
