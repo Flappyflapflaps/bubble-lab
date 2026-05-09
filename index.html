@@ -473,9 +473,10 @@ function RecipeList({ recipes, onOpen, onNew, onResetAll, onSettings }) {
    RECIPE DETAIL — VOLUME PICK + CHECKLIST
    ============================================================ */
 
-function RecipeDetail({ recipe, viewState, setViewState, onBack, onEdit, onDelete }) {
+function RecipeDetail({ recipe, viewState, setViewState, onBack, onEdit, onDelete, onMakeBatch, nextBatchNumber }) {
   const liters = viewState.liters;
   const checked = viewState.checked || {};
+  const [makingBatch, setMakingBatch] = useState(false);
 
   const grouped = useMemo(() => {
     const g = { surfactant: [], polymer: [], other: [] };
@@ -505,9 +506,19 @@ function RecipeDetail({ recipe, viewState, setViewState, onBack, onEdit, onDelet
           </div>
           <div className="mt-12 w-full max-w-md flex gap-2">
             <SecondaryBtn onClick={onEdit} className="flex-1">Edit</SecondaryBtn>
+            <SecondaryBtn onClick={() => setMakingBatch(true)} className="flex-1">Make Batch</SecondaryBtn>
             <SecondaryBtn onClick={onDelete} className="flex-1 text-red-600 border-red-300 active:bg-red-50">Delete</SecondaryBtn>
           </div>
         </div>
+        {makingBatch && (
+          <MakeBatchSheet
+            recipe={recipe}
+            defaultVolume={viewState.liters || 1}
+            nextBatchNumber={nextBatchNumber}
+            onMake={onMakeBatch}
+            onCancel={() => setMakingBatch(false)}
+          />
+        )}
       </div>
     );
   }
@@ -804,6 +815,65 @@ function AddRowSheet({ role, onAdd, onCancel }) {
           <div className="flex gap-2 pt-2">
             <SecondaryBtn onClick={onCancel} className="flex-1">Cancel</SecondaryBtn>
             <PrimaryBtn onClick={submit} disabled={!finalLabel || !grams} className="flex-1">Add</PrimaryBtn>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MakeBatchSheet({ recipe, defaultVolume, nextBatchNumber, onMake, onCancel }) {
+  const [volume, setVolume] = useState(defaultVolume || 1);
+  const [notes, setNotes] = useState('');
+
+  const submit = () => {
+    onMake({
+      id: uuid(),
+      number: nextBatchNumber,
+      recipe_id: recipe.id,
+      volume_L: volume,
+      created_at: new Date().toISOString(),
+      notes,
+      status: 'aging',
+    });
+    onCancel();
+  };
+
+  return (
+    <div className="fixed inset-0 z-30 flex items-end" onClick={onCancel}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative w-full bg-white rounded-t-2xl border-t border-gray-200 sheet-enter safe-bottom"
+           onClick={e => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <div className="font-semibold text-lg">Make Batch #{nextBatchNumber}</div>
+          <button onClick={onCancel} className="tap text-base text-gray-500 px-2">Close</button>
+        </div>
+        <div className="p-4 space-y-4">
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">Recipe</div>
+            <div className="text-base font-semibold">{autoName(recipe)}</div>
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Volume (liters)</div>
+            <div className="grid grid-cols-5 gap-2">
+              {[1, 2, 3, 4, 5].map(L => (
+                <button key={L} onClick={() => setVolume(L)}
+                  className={classNames(
+                    'tap rounded-xl border-2 py-3 text-lg font-bold',
+                    volume === L ? 'border-black bg-black text-white' : 'border-gray-300 bg-white active:bg-gray-50'
+                  )}>{L}L</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Notes (optional)</div>
+            <input value={notes} onChange={e => setNotes(e.target.value)}
+              placeholder="e.g. fresh PEO batch, aged 48h"
+              className="w-full rounded-xl border border-gray-300 px-3 py-3 text-base" />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <SecondaryBtn onClick={onCancel} className="flex-1">Cancel</SecondaryBtn>
+            <PrimaryBtn onClick={submit} className="flex-1">Make Batch #{nextBatchNumber}</PrimaryBtn>
           </div>
         </div>
       </div>
