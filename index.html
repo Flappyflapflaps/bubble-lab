@@ -1047,10 +1047,112 @@ function FieldTab({ state, dispatch }) {
 }
 
 function StartSessionSheet({ batches, recipes, onCancel, onCreate }) {
+  const [step, setStep] = useState(1);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [weather, setWeather] = useState(null);
+  const [wind, setWind] = useState(null);
+
+  const toggleBatch = (id) =>
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const submit = () => {
+    onCreate({
+      id: uuid(),
+      started_at: new Date().toISOString(),
+      ended_at: null,
+      conditions: { weather, wind },
+      batch_ids: selectedIds,
+      batch_ratings: [],
+    });
+  };
+
+  const sorted = [...batches].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
   return (
     <div className="flex flex-col h-full">
-      <Header left={<button onClick={onCancel} className="tap px-2 -ml-2 text-base">Cancel</button>} title="Start Session" />
-      <div className="flex-1 flex items-center justify-center text-gray-400">Coming soon</div>
+      <Header
+        left={
+          <button onClick={step === 1 ? onCancel : () => setStep(1)} className="tap px-2 -ml-2 text-base">
+            {step === 1 ? 'Cancel' : '‹ Back'}
+          </button>
+        }
+        title={step === 1 ? 'Pick batches' : 'Conditions'}
+        right={
+          step === 1
+            ? <button onClick={() => setStep(2)} disabled={selectedIds.length === 0}
+                className={classNames('tap px-2 -mr-2 text-base font-bold', selectedIds.length === 0 ? 'text-gray-400' : '')}>
+                Next
+              </button>
+            : <button onClick={submit} disabled={!weather || !wind}
+                className={classNames('tap px-2 -mr-2 text-base font-bold', (!weather || !wind) ? 'text-gray-400' : '')}>
+                Start
+              </button>
+        }
+      />
+      <div className="flex-1 overflow-y-auto pb-8">
+        {step === 1 && (
+          <div className="px-4 pt-4">
+            <div className="text-sm text-gray-500 mb-4">Select which batches you're testing today.</div>
+            {sorted.length === 0 ? (
+              <div className="text-sm text-gray-400 text-center py-8">No batches yet.</div>
+            ) : (
+              <ul>
+                {sorted.map(b => {
+                  const recipe = recipes.find(r => r.id === b.recipe_id);
+                  const selected = selectedIds.includes(b.id);
+                  return (
+                    <li key={b.id}>
+                      <button onClick={() => toggleBatch(b.id)}
+                        className="w-full flex items-center gap-3 py-3 border-b border-gray-100 text-left active:bg-gray-50">
+                        <span className={classNames(
+                          'w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 text-base',
+                          selected ? 'bg-black border-black text-white' : 'border-gray-400 bg-white'
+                        )}>{selected ? '✓' : ''}</span>
+                        <span className="flex-1 min-w-0">
+                          <span className="font-semibold block">
+                            #{b.number} · {recipe ? autoName(recipe) : 'Unknown'}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            {b.volume_L}L · {fmtAge(b.created_at)} old · {b.status}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+        {step === 2 && (
+          <div className="px-4 pt-4 space-y-6">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Weather</div>
+              <div className="grid grid-cols-2 gap-2">
+                {['cold', 'mild', 'warm', 'hot'].map(w => (
+                  <button key={w} onClick={() => setWeather(w)}
+                    className={classNames(
+                      'tap rounded-xl border-2 py-3 text-base capitalize font-semibold',
+                      weather === w ? 'border-black bg-black text-white' : 'border-gray-300 bg-white active:bg-gray-50'
+                    )}>{w}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Wind</div>
+              <div className="grid grid-cols-2 gap-2">
+                {['calm', 'light', 'moderate', 'strong'].map(w => (
+                  <button key={w} onClick={() => setWind(w)}
+                    className={classNames(
+                      'tap rounded-xl border-2 py-3 text-base capitalize font-semibold',
+                      wind === w ? 'border-black bg-black text-white' : 'border-gray-300 bg-white active:bg-gray-50'
+                    )}>{w}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
