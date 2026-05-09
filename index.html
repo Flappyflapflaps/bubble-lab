@@ -1224,11 +1224,143 @@ function ActiveSessionScreen({ session, batches, recipes, onRate, onEnd }) {
   );
 }
 
+function StarRow({ value, onChange }) {
+  return (
+    <div className="flex gap-2">
+      {[1, 2, 3, 4, 5].map(n => {
+        const selected = value === n;
+        return (
+          <button
+            key={n}
+            onClick={() => onChange(selected ? null : n)}
+            className="flex items-center justify-center rounded-full border-2 border-black text-sm font-bold flex-shrink-0"
+            style={{ width: 32, height: 32, background: selected ? '#000' : '#fff', color: selected ? '#fff' : '#000' }}
+          >
+            {n}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function BatchRatingScreen({ batchId, batches, recipes, initialRating, onDone, onBack }) {
+  const [ratings, setRatings] = React.useState(initialRating?.ratings ?? emptyRatings());
+  const [overallNote, setOverallNote] = React.useState(initialRating?.overall_note ?? '');
+  // Track which property notes are expanded
+  const [expandedNotes, setExpandedNotes] = React.useState(() => {
+    const init = {};
+    RATING_PROPERTIES.forEach(p => {
+      init[p.key] = !!(initialRating?.ratings?.[p.key]?.note);
+    });
+    return init;
+  });
+
+  const batch = batches?.find(b => b.id === batchId);
+  const recipe = batch ? recipes?.find(r => r.id === batch.recipe_id) : null;
+  const title = batch
+    ? `Batch #${batch.number}${recipe ? ' · ' + recipe.name : ''}`
+    : 'Rate batch';
+
+  const setStars = (key, stars) => {
+    setRatings(prev => ({ ...prev, [key]: { ...prev[key], stars } }));
+  };
+
+  const setNote = (key, note) => {
+    setRatings(prev => ({ ...prev, [key]: { ...prev[key], note } }));
+  };
+
+  const toggleNote = (key) => {
+    setExpandedNotes(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const sections = ['Mixture', 'Bubble', 'Other'];
+
+  const handleDone = () => {
+    onDone({
+      id: initialRating?.id ?? uuid(),
+      batch_id: batchId,
+      ratings,
+      overall_note: overallNote,
+    });
+  };
+
   return (
     <div className="flex flex-col h-full">
-      <Header left={<button onClick={onBack} className="tap px-2 -ml-2 text-base">‹ Back</button>} title="Rate batch" />
-      <div className="flex-1 flex items-center justify-center text-gray-400">Coming soon</div>
+      <Header
+        left={<button onClick={onBack} className="tap px-2 -ml-2 text-base">‹ Back</button>}
+        title={title}
+      />
+      <div className="flex-1 overflow-y-auto">
+        {sections.map(section => {
+          const props = RATING_PROPERTIES.filter(p => p.section === section);
+          return (
+            <div key={section}>
+              <div className="text-xs font-bold uppercase tracking-wider text-gray-500 px-4 py-2">
+                {section}
+              </div>
+              {props.map((prop, idx) => {
+                const entry = ratings[prop.key] || { stars: null, note: '' };
+                const noteOpen = expandedNotes[prop.key];
+                return (
+                  <div key={prop.key}>
+                    <div className="px-4 py-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">{prop.label}</span>
+                        {!noteOpen && (
+                          <button
+                            onClick={() => toggleNote(prop.key)}
+                            className="text-xs text-gray-400 underline"
+                          >
+                            Add note
+                          </button>
+                        )}
+                      </div>
+                      <StarRow value={entry.stars} onChange={(v) => setStars(prop.key, v)} />
+                      {noteOpen && (
+                        <div className="mt-2">
+                          <textarea
+                            value={entry.note}
+                            onChange={e => setNote(prop.key, e.target.value)}
+                            placeholder="Note…"
+                            rows={2}
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm resize-none"
+                          />
+                          {!entry.note && (
+                            <button
+                              onClick={() => toggleNote(prop.key)}
+                              className="text-xs text-gray-400 underline mt-1"
+                            >
+                              Hide
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {idx < props.length - 1 && <div className="border-b border-gray-100 mx-4" />}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+        <div className="h-4" />
+      </div>
+      <div className="border-t border-gray-200 px-4 py-4 bg-white">
+        <textarea
+          value={overallNote}
+          onChange={e => setOverallNote(e.target.value)}
+          placeholder="Overall note…"
+          rows={2}
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-none mb-3"
+        />
+        <button
+          onClick={handleDone}
+          className="w-full bg-black text-white font-semibold py-3 rounded-xl text-base"
+        >
+          Done
+        </button>
+      </div>
     </div>
   );
 }
