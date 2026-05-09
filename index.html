@@ -558,6 +558,20 @@ function RecipeDetail({ recipe, viewState, setViewState, onBack, onEdit, onDelet
     ['surfactant', 'Surfactants'],
   ];
 
+  // Compute concentrate matches for checklist display
+  const concMatches = {};
+  let waterFromConc = 0;
+  (recipe.rows || []).forEach(row => {
+    const c = findConcentrate(row, state.concentrates || []);
+    if (c) {
+      const activeG = row.grams_per_L * liters;
+      const mL = activeG / c.gPerML;
+      concMatches[row.id] = { concentrate: c, mL };
+      if (c.aqueous) waterFromConc += mL; // 1 mL ≈ 1 g water
+    }
+  });
+  const isWaterRow = r => (r.label || '').toLowerCase().includes('water');
+
   return (
     <div className="flex flex-col h-full">
       <Header
@@ -591,8 +605,35 @@ function RecipeDetail({ recipe, viewState, setViewState, onBack, onEdit, onDelet
                         'flex-1 text-base leading-snug',
                         isChecked && 'line-through text-gray-400'
                       )}>
-                        <span className="font-bold tabular-nums">{fmtG(grams)}</span>
-                        <span className="ml-2">{row.label}</span>
+                        {(() => {
+                          const match = concMatches[row.id];
+                          if (match) {
+                            const mL = match.mL;
+                            const display = mL < 1 ? (mL * 1000).toFixed(0) + ' µL' : mL.toFixed(1) + ' mL';
+                            return (
+                              <>
+                                <span className="font-bold tabular-nums">{display}</span>
+                                <span className="ml-2">{match.concentrate.name} concentrate</span>
+                              </>
+                            );
+                          }
+                          if (isWaterRow(row) && waterFromConc > 0) {
+                            const rawG = row.grams_per_L * liters;
+                            const adjG = Math.max(0, rawG - waterFromConc);
+                            return (
+                              <>
+                                <span className="font-bold tabular-nums">{fmtG(adjG)}</span>
+                                <span className="ml-2">{row.label} <span className="text-xs text-gray-400">(adj.)</span></span>
+                              </>
+                            );
+                          }
+                          return (
+                            <>
+                              <span className="font-bold tabular-nums">{fmtG(grams)}</span>
+                              <span className="ml-2">{row.label}</span>
+                            </>
+                          );
+                        })()}
                       </span>
                     </button>
                   </li>
