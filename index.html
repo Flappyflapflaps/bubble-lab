@@ -899,10 +899,7 @@ function SettingsScreen({ state, dispatch, onClose }) {
         <div className="px-4 py-5 border-t border-gray-200">
           <div className="text-sm font-semibold text-gray-900 mb-1">Export Data</div>
           <div className="text-sm text-gray-500 mb-3">Download a JSON backup of all your recipes, batches, and sessions.</div>
-          <button onClick={handleExport}
-            className="tap w-full border-2 border-black text-black font-semibold py-3 rounded-xl bg-white active:bg-gray-100">
-            Export JSON
-          </button>
+          <SecondaryBtn onClick={handleExport}>Export JSON</SecondaryBtn>
         </div>
 
         {/* Reset to defaults section */}
