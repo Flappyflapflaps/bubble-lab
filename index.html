@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#ffffff" />
+<title>Bubble Recipes</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  html, body, #root { height: 100%; }
+  body {
+    background: #ffffff;
+    color: #000000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
+  }
+  input, select, textarea, button { color: #000; font: inherit; }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .tap { min-height: 48px; }
+  @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .sheet-enter { animation: slide-up 180ms ease-out; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useReducer } = React;
+
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
+
+const STORAGE_KEY = 'bubble-lab-v1';
+const SCHEMA_VERSION = 2;
+
+const SURFACTANTS = ['SLES', 'AOS', 'CAPB', 'LDAO'];
+const POLYMERS = ['PEO', 'PAM', 'HEC'];
+const COMMON_OTHERS = [
+  'Distilled water',
+  'Vegetable glycerin',
+  'Isopropyl alcohol',
+  'Tetrasodium EDTA',
+  'Sorbic acid',
+  'Potassium sorbate',
+  'Dipotassium phosphate',
+  'Lactic acid 80%',
+];
+
+// Lower number = higher priority for naming prefix
+const SURF_PRIORITY = { SLES: 0, AOS: 1, CAPB: 2, LDAO: 3 };
+const POLY_ORDER    = { PAM: 0, PEO: 1, HEC: 2 };
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+
+function uuid() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function round(v, sig = 4) {
+  if (v == null || isNaN(v) || v === 0) return v || 0;
+  const d = Math.ceil(Math.log10(Math.abs(v)));
+  const f = Math.pow(10, sig - d);
+  return Math.round(v * f) / f;
+}
+
+function fmtNum(n) {
+  if (n == null || isNaN(n)) return '—';
+  let s;
+  if (Math.abs(n) >= 100) s = n.toFixed(1);
+  else if (Math.abs(n) >= 1) s = n.toFixed(2);
+  else s = n.toFixed(4);
+  if (s.includes('.')) {
+    s = s.replace(/0+$/, '');
+    if (s.endsWith('.')) s = s.slice(0, -1);
+  }
+  return s;
+}
+
+function fmtG(v) {
+  if (v == null || isNaN(v)) return '—';
+  return fmtNum(v) + ' g';
+}
+
+function classNames(...xs) { return xs.filter(Boolean).join(' '); }
+
+function shortenSurfactantName(name) {
+  if (!name) return null;
+  const n = name.toLowerCase();
+  if (n.includes('sles')) return 'SLES';
+  if (n.includes('aos')) return 'AOS';
+  if (n.includes('capb')) return 'CAPB';
+  if (n.includes('ldao')) return 'LDAO';
+  return null;
+}
+
+/* ============================================================
+   AUTO-NAME
+   ============================================================ */
+
+function autoName(recipe) {
+  if (recipe.custom_name && recipe.custom_name.trim()) return recipe.custom_name;
+  const rows = recipe.rows || [];
+  const surfs = rows.filter(r => r.role === 'surfactant' && r.short && SURFACTANTS.includes(r.short));
+  const polys = rows.filter(r => r.role === 'polymer' && r.short && POLYMERS.includes(r.short));
+  surfs.sort((a, b) => (SURF_PRIORITY[a.short] ?? 9) - (SURF_PRIORITY[b.short] ?? 9));
+  polys.sort((a, b) => (POLY_ORDER[a.short] ?? 9) - (POLY_ORDER[b.short] ?? 9));
+
+  if (surfs.length === 0 && polys.length === 0) {
+    return rows[0]?.label || 'New recipe';
+  }
+  const prefix = surfs[0]?.short || (rows.find(r => r.role === 'surfactant')?.label) || 'Recipe';
+  if (polys.length === 0) return prefix;
+  const parts = polys.map(p => {
+    const g = (p.active_g_per_L != null && !isNaN(p.active_g_per_L)) ? p.active_g_per_L : p.grams_per_L;
+    return `${fmtNum(g)}g ${p.short}`;
+  });
+  return `${prefix}: ${parts.join(' & ')}`;
+}
+
+/* ============================================================
+   SEED RECIPES (per 1 liter base)
+   ============================================================ */
+
+function seedRecipes() {
+  return [
+    {
+      id: uuid(),
+      custom_name: null,
+      notes:
+        'SLES baseline. Slurry polymers in IPA, hydrate, rest 1–24 hr, then surfactants.\n\n' +
+        '1) Acidified water prep: dissolve DPP and sorbic acid in distilled water; titrate to pH 6.0–6.5 with lactic acid drop-by-drop.\n' +
+        '2) Slurry: combine dry PEO + dry PAM into IPA. Stir until clump-free.\n' +
+        '3) Hydration: pour slurry into vortexed acidified water. Stir 10 min, rest 1–24 hr.\n' +
+        '4) Surfactants: gently fold in SLES, then CAPB, then LDAO. No foam.\n' +
+        '5) Add remaining glycerin. Rest 48 hr.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled water',        grams_per_L: 816,    active_g_per_L: null, short: null },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin',     grams_per_L: 100,    active_g_per_L: null, short: null },
+        { id: uuid(), role: 'other',      label: 'Isopropyl alcohol',      grams_per_L: 30,     active_g_per_L: null, short: null },
+        { id: uuid(), role: 'polymer',    label: 'PEO WSR-301 (dry)',      grams_per_L: 0.1,    active_g_per_L: 0.1,  short: 'PEO' },
+        { id: uuid(), role: 'polymer',    label: 'Anionic PAM HMW (dry)',  grams_per_L: 0.05,   active_g_per_L: 0.05, short: 'PAM' },
+        { id: uuid(), role: 'other',      label: 'Dipotassium phosphate',  grams_per_L: 1.5,    active_g_per_L: null, short: null },
+        { id: uuid(), role: 'other',      label: 'Sorbic acid',            grams_per_L: 2,      active_g_per_L: null, short: null },
+        { id: uuid(), role: 'other',      label: 'Lactic acid 80%',        grams_per_L: 1,      active_g_per_L: null, short: null },
+        { id: uuid(), role: 'surfactant', label: 'SLES-70 paste',          grams_per_L: 35,     active_g_per_L: null, short: 'SLES' },
+        { id: uuid(), role: 'surfactant', label: 'CAPB-35',                grams_per_L: 12,     active_g_per_L: null, short: 'CAPB' },
+        { id: uuid(), role: 'surfactant', label: 'LDAO-30',                grams_per_L: 5,      active_g_per_L: null, short: 'LDAO' },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: null,
+      notes:
+        'AOS replaces SLES — superior polymer compatibility. HEC is non-ionic; no acidifier or DPP. No IPA. Do not adjust pH.\n\n' +
+        '1) Glycerin slurry: 100 g glycerin + 0.125 g dry PEO + 0.25 g dry HEC. High shear until evenly suspended.\n' +
+        '2) Hydration: vortex 816.6 g distilled water (with EDTA dissolved). Pour slurry into water.\n' +
+        '3) Entropic rest: seal, undisturbed 12–24 hr.\n' +
+        '4) Surfactants: gently fold AOS, then CAPB, then LDAO. Stir slowly.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled water',        grams_per_L: 816.6,  active_g_per_L: null,  short: null },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin',     grams_per_L: 100,    active_g_per_L: null,  short: null },
+        { id: uuid(), role: 'polymer',    label: 'PEO WSR-301 (dry)',      grams_per_L: 0.125,  active_g_per_L: 0.125, short: 'PEO' },
+        { id: uuid(), role: 'polymer',    label: 'HEC Natrosol 250 HHR',   grams_per_L: 0.25,   active_g_per_L: 0.25,  short: 'HEC' },
+        { id: uuid(), role: 'other',      label: 'Tetrasodium EDTA',       grams_per_L: 2.5,    active_g_per_L: null,  short: null },
+        { id: uuid(), role: 'surfactant', label: 'AOS-40',                 grams_per_L: 40,     active_g_per_L: null,  short: 'AOS' },
+        { id: uuid(), role: 'surfactant', label: 'CAPB-35',                grams_per_L: 35,     active_g_per_L: null,  short: 'CAPB' },
+        { id: uuid(), role: 'surfactant', label: 'LDAO-30',                grams_per_L: 8,      active_g_per_L: null,  short: 'LDAO' },
+      ],
+    },
+  ];
+}
+
+/* ============================================================
+   STORAGE / MIGRATION
+   ============================================================ */
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+function saveState(state) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: SCHEMA_VERSION, recipes: state.recipes }));
+  } catch (e) { console.error(e); }
+}
+
+// Migrate v1 (stocks + ingredients[stock_id, target_type, target_value]) → v2 (rows)
+function migrate(loaded) {
+  if (!loaded) return { version: SCHEMA_VERSION, recipes: seedRecipes() };
+
+  // Already v2: pass through, but ensure shape.
+  if ((loaded.recipes || []).every(r => Array.isArray(r.rows))) {
+    return { version: SCHEMA_VERSION, recipes: loaded.recipes };
+  }
+
+  const stocksById = {};
+  for (const s of loaded.stocks || []) stocksById[s.id] = s;
+
+  const migrated = (loaded.recipes || []).map(r => {
+    if (Array.isArray(r.rows)) return r;
+    const liters = (r.target_volume_mL || 1000) / 1000;
+    const rows = (r.ingredients || []).map(ing => {
+      const stock = stocksById[ing.stock_id];
+      if (!stock) return null;
+
+      let gramsPerL = 0;
+      let activeGperL = null;
+
+      if (ing.target_type === 'mass_g') {
+        gramsPerL = ing.target_value / liters;
+        if (stock.category === 'polymer') activeGperL = gramsPerL;
+      } else if (ing.target_type === 'volume_mL') {
+        gramsPerL = ing.target_value / liters; // density ~1
+      } else if (ing.target_type === 'ppm') {
+        if (stock.ingredient_type === 'polymer_concentrate' && stock.concentration_unit === 'g_per_mL') {
+          activeGperL = ing.target_value / 1000;
+          gramsPerL = activeGperL / stock.concentration_value;
+        } else {
+          gramsPerL = ing.target_value / 1000;
+          activeGperL = gramsPerL;
+        }
+      } else if (ing.target_type === 'percent_active') {
+        activeGperL = ing.target_value * 10;
+        const af = stock.concentration_unit === 'percent_active' ? stock.concentration_value / 100 : 1;
+        gramsPerL = af > 0 ? activeGperL / af : 0;
+      }
+
+      let role = 'other';
+      let short = null;
+      if (['anionic', 'amphoteric', 'nonionic'].includes(stock.category)) {
+        role = 'surfactant';
+        short = shortenSurfactantName(stock.name);
+      } else if (stock.category === 'polymer') {
+        role = 'polymer';
+        short = stock.polymer_type || null;
+      }
+
+      return {
+        id: uuid(),
+        role,
+        label: stock.name,
+        grams_per_L: round(gramsPerL, 4),
+        active_g_per_L: activeGperL != null ? round(activeGperL, 4) : null,
+        short,
+      };
+    }).filter(Boolean);
+
+    return {
+      id: r.id || uuid(),
+      custom_name: null, // force auto-name
+      notes: r.protocol_notes || '',
+      rows,
+    };
+  });
+
+  // Add any missing seed recipes (dedup by auto-name)
+  const seeds = seedRecipes();
+  const existingNames = new Set(migrated.map(autoName));
+  const toAdd = seeds.filter(s => !existingNames.has(autoName(s)));
+  return { version: SCHEMA_VERSION, recipes: [...migrated, ...toAdd] };
+}
+
+/* ============================================================
+   REDUCER
+   ============================================================ */
+
+function reducer(state, a) {
+  switch (a.type) {
+    case 'ADD_RECIPE':    return { ...state, recipes: [...state.recipes, a.recipe] };
+    case 'UPDATE_RECIPE': return { ...state, recipes: state.recipes.map(r => r.id === a.recipe.id ? a.recipe : r) };
+    case 'DELETE_RECIPE': return { ...state, recipes: state.recipes.filter(r => r.id !== a.id) };
+    case 'RESET':         return { version: SCHEMA_VERSION, recipes: seedRecipes() };
+    default: return state;
+  }
+}
+
+/* ============================================================
+   PRIMITIVE UI
+   ============================================================ */
+
+function Header({ left, title, right }) {
+  return (
+    <div className="safe-top sticky top-0 z-20 bg-white border-b border-gray-200">
+      <div className="flex items-center justify-between px-3 py-2 min-h-[56px]">
+        <div className="w-20">{left}</div>
+        <div className="font-semibold text-base truncate text-center flex-1">{title}</div>
+        <div className="w-20 text-right">{right}</div>
+      </div>
+    </div>
+  );
+}
+
+function PrimaryBtn({ onClick, disabled, children, className }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      className={classNames(
+        'tap w-full rounded-xl px-4 py-3 font-semibold border text-base',
+        disabled ? 'bg-gray-100 text-gray-400 border-gray-200'
+                 : 'bg-black text-white border-black active:bg-gray-800',
+        className
+      )}>{children}</button>
+  );
+}
+
+function SecondaryBtn({ onClick, children, className }) {
+  return (
+    <button onClick={onClick}
+      className={classNames('tap rounded-xl px-4 py-3 font-semibold border border-gray-300 bg-white active:bg-gray-100 text-base', className)}>
+      {children}
+    </button>
+  );
+}
+
+/* ============================================================
+   RECIPE LIST
+   ============================================================ */
+
+function RecipeList({ recipes, onOpen, onNew, onResetAll }) {
+  const sorted = useMemo(() => [...recipes].sort((a, b) => autoName(a).localeCompare(autoName(b))), [recipes]);
+  return (
+    <div className="flex flex-col h-full">
+      <Header title="Recipes" right={
+        <button onClick={onNew} className="tap px-3 -mr-3 text-base font-semibold">+ New</button>
+      } />
+      <div className="flex-1 overflow-y-auto">
+        {sorted.length === 0 ? (
+          <div className="text-center py-16 px-4">
+            <div className="text-4xl mb-3">🫧</div>
+            <div className="text-lg font-semibold mb-1">No recipes yet</div>
+            <div className="text-sm text-gray-500 mb-6">Create your first one.</div>
+            <div className="max-w-xs mx-auto">
+              <PrimaryBtn onClick={onNew}>+ New recipe</PrimaryBtn>
+            </div>
+          </div>
+        ) : (
+          <ul>
+            {sorted.map(r => (
+              <li key={r.id}>
+                <button onClick={() => onOpen(r.id)} className="w-full text-left px-4 py-4 border-b border-gray-200 active:bg-gray-50">
+                  <div className="font-semibold text-base">{autoName(r)}</div>
+                  {r.notes && <div className="text-sm text-gray-500 mt-0.5 line-clamp-1">{r.notes.split('\n')[0]}</div>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="safe-bottom border-t border-gray-200 p-3 text-center">
+        <button onClick={onResetAll} className="text-sm text-gray-500 underline">Reset to default recipes</button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   RECIPE DETAIL — VOLUME PICK + CHECKLIST
+   ============================================================ */
+
+function RecipeDetail({ recipe, viewState, setViewState, onBack, onEdit, onDelete }) {
+  const liters = viewState.liters;
+  const checked = viewState.checked || {};
+
+  const grouped = useMemo(() => {
+    const g = { surfactant: [], polymer: [], other: [] };
+    for (const row of recipe.rows) (g[row.role] || g.other).push(row);
+    return g;
+  }, [recipe.rows]);
+
+  // VOLUME PICKER VIEW
+  if (!liters) {
+    return (
+      <div className="flex flex-col h-full">
+        <Header
+          left={<button onClick={onBack} className="tap px-2 -ml-2 text-base">‹ Back</button>}
+          right={<button onClick={onEdit} className="tap px-2 -mr-2 text-base">Edit</button>}
+        />
+        <div className="flex-1 flex flex-col items-center justify-center px-6">
+          <div className="text-2xl font-bold text-center">{autoName(recipe)}</div>
+          <div className="mt-12 text-base text-gray-700">How many liters?</div>
+          <div className="mt-4 grid grid-cols-5 gap-2 w-full max-w-md">
+            {[1, 2, 3, 4, 5].map(L => (
+              <button key={L}
+                onClick={() => setViewState({ ...viewState, liters: L, checked: {} })}
+                className="tap rounded-xl border-2 border-black bg-white text-black active:bg-black active:text-white text-2xl font-bold py-5">
+                {L}L
+              </button>
+            ))}
+          </div>
+          <div className="mt-12 w-full max-w-md flex gap-2">
+            <SecondaryBtn onClick={onEdit} className="flex-1">Edit</SecondaryBtn>
+            <SecondaryBtn onClick={onDelete} className="flex-1 text-red-600 border-red-300 active:bg-red-50">Delete</SecondaryBtn>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // CHECKLIST VIEW
+  const toggle = (id) => setViewState({ ...viewState, checked: { ...checked, [id]: !checked[id] } });
+  const total = recipe.rows.length;
+  const done = recipe.rows.filter(r => checked[r.id]).length;
+  const allChecked = total > 0 && done === total;
+
+  const sections = [
+    ['polymer', 'Polymers'],
+    ['other', 'Base & additives'],
+    ['surfactant', 'Surfactants'],
+  ];
+
+  return (
+    <div className="flex flex-col h-full">
+      <Header
+        left={<button onClick={() => setViewState({ ...viewState, liters: null })} className="tap px-2 -ml-2 text-base">‹ Volume</button>}
+        title={`${liters} L batch`}
+        right={<button onClick={() => setViewState({ ...viewState, checked: {} })} className="tap px-2 -mr-2 text-sm text-gray-600">Reset</button>}
+      />
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 pt-4 pb-2 border-b border-gray-100">
+          <div className="text-xl font-bold leading-tight">{autoName(recipe)}</div>
+          <div className="text-sm text-gray-500 mt-1 tabular-nums">{done} / {total} ingredients</div>
+        </div>
+
+        {sections.map(([role, label]) => grouped[role].length > 0 && (
+          <div key={role} className="px-4 pt-5 pb-1">
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">{label}</div>
+            <ul>
+              {grouped[role].map(row => {
+                const isChecked = !!checked[row.id];
+                const grams = row.grams_per_L * liters;
+                return (
+                  <li key={row.id}>
+                    <button
+                      onClick={() => toggle(row.id)}
+                      className="w-full flex items-center gap-3 py-3 border-b border-gray-100 text-left active:bg-gray-50">
+                      <span className={classNames(
+                        'w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 text-base',
+                        isChecked ? 'bg-black border-black text-white' : 'border-gray-400 bg-white'
+                      )}>{isChecked ? '✓' : ''}</span>
+                      <span className={classNames(
+                        'flex-1 text-base leading-snug',
+                        isChecked && 'line-through text-gray-400'
+                      )}>
+                        <span className="font-bold tabular-nums">{fmtG(grams)}</span>
+                        <span className="ml-2">{row.label}</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+
+        {recipe.notes && (
+          <div className="px-4 pt-6 pb-6">
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Notes</div>
+            <div className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">{recipe.notes}</div>
+          </div>
+        )}
+
+        <div className="h-24" />
+      </div>
+
+      {allChecked && (
+        <div className="safe-bottom sticky bottom-0 bg-white border-t border-gray-200 p-3">
+          <PrimaryBtn onClick={() => setViewState({ ...viewState, checked: {} })}>
+            ✓ All done — start over
+          </PrimaryBtn>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   RECIPE EDITOR
+   ============================================================ */
+
+function RecipeEditor({ recipe, onSave, onCancel, onDelete }) {
+  const [r, setR] = useState(recipe ? { ...recipe, rows: [...recipe.rows] } : {
+    id: uuid(),
+    custom_name: null,
+    notes: '',
+    rows: [],
+  });
+  const [adding, setAdding] = useState(null); // { role: 'surfactant'|'polymer'|'other' }
+
+  const grouped = { surfactant: [], polymer: [], other: [] };
+  for (const row of r.rows) (grouped[row.role] || grouped.other).push(row);
+
+  const addRow = (row) => setR({ ...r, rows: [...r.rows, row] });
+  const updRow = (row) => setR({ ...r, rows: r.rows.map(x => x.id === row.id ? row : x) });
+  const delRow = (id)  => setR({ ...r, rows: r.rows.filter(x => x.id !== id) });
+
+  const previewName = autoName(r);
+
+  const sections = [
+    ['polymer', 'Polymers'],
+    ['other', 'Base & additives'],
+    ['surfactant', 'Surfactants'],
+  ];
+
+  return (
+    <div className="flex flex-col h-full">
+      <Header
+        left={<button onClick={onCancel} className="tap px-2 -ml-2 text-base">Cancel</button>}
+        title={recipe ? 'Edit recipe' : 'New recipe'}
+        right={<button onClick={() => onSave(r)} disabled={r.rows.length === 0}
+          className={classNames('tap px-2 -mr-2 text-base font-bold', r.rows.length === 0 ? 'text-gray-400' : '')}>Save</button>}
+      />
+      <div className="flex-1 overflow-y-auto pb-32">
+        <div className="px-4 pt-4">
+          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">Recipe name</div>
+          <div className="rounded-xl border border-gray-300 bg-gray-50 px-3 py-3 text-base font-semibold">{previewName}</div>
+          <div className="text-xs text-gray-500 mt-1">Auto-named from primary surfactant + polymers. Add a custom name if needed:</div>
+          <input
+            value={r.custom_name || ''}
+            onChange={e => setR({ ...r, custom_name: e.target.value || null })}
+            placeholder="(optional custom name)"
+            className="mt-2 w-full rounded-xl border border-gray-300 px-3 py-3 text-base"
+          />
+        </div>
+
+        {sections.map(([role, label]) => (
+          <div key={role} className="px-4 pt-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-bold uppercase tracking-wide text-gray-500">{label}</div>
+              <button onClick={() => setAdding({ role })} className="tap px-2 -mr-2 text-sm font-semibold">+ Add</button>
+            </div>
+            {grouped[role].length === 0 ? (
+              <div className="text-sm text-gray-400 py-2">None.</div>
+            ) : (
+              <ul>
+                {grouped[role].map(row => (
+                  <li key={row.id}>
+                    <RowInline row={row} onChange={updRow} onDelete={() => delRow(row.id)} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+
+        <div className="px-4 pt-5">
+          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Notes</div>
+          <textarea
+            value={r.notes}
+            onChange={e => setR({ ...r, notes: e.target.value })}
+            rows={6}
+            placeholder="Protocol, observations, anything you want to remember…"
+            className="w-full rounded-xl border border-gray-300 px-3 py-3 text-base"
+          />
+        </div>
+
+        {recipe && (
+          <div className="px-4 pt-6">
+            <button
+              onClick={onDelete}
+              className="tap w-full rounded-xl px-4 py-3 border border-red-300 text-red-600 font-semibold active:bg-red-50">
+              Delete recipe
+            </button>
+          </div>
+        )}
+      </div>
+
+      {adding && (
+        <AddRowSheet
+          role={adding.role}
+          onCancel={() => setAdding(null)}
+          onAdd={(row) => { addRow(row); setAdding(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function RowInline({ row, onChange, onDelete }) {
+  return (
+    <div className="flex items-center gap-2 py-2 border-b border-gray-100">
+      <input
+        value={row.label}
+        onChange={e => onChange({ ...row, label: e.target.value })}
+        className="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-base"
+      />
+      <input
+        type="number" inputMode="decimal"
+        value={row.grams_per_L}
+        onChange={e => {
+          const v = parseFloat(e.target.value) || 0;
+          const patch = { ...row, grams_per_L: v };
+          if (row.role === 'polymer') patch.active_g_per_L = v;
+          onChange(patch);
+        }}
+        step="0.01"
+        className="w-20 rounded-lg border border-gray-300 px-2 py-2 text-right tabular-nums"
+      />
+      <span className="text-xs text-gray-500">g/L</span>
+      <button onClick={onDelete} className="tap text-red-500 px-2 text-xl leading-none">×</button>
+    </div>
+  );
+}
+
+/* ============================================================
+   ADD ROW SHEET
+   ============================================================ */
+
+function AddRowSheet({ role, onAdd, onCancel }) {
+  const presets = role === 'surfactant' ? SURFACTANTS
+    : role === 'polymer' ? POLYMERS
+    : COMMON_OTHERS;
+
+  const [picked, setPicked] = useState(null);
+  const [customLabel, setCustomLabel] = useState('');
+  const [grams, setGrams] = useState('');
+
+  const finalLabel = picked || customLabel.trim();
+  const finalShort =
+    role === 'surfactant' ? (SURFACTANTS.includes(picked) ? picked : null)
+    : role === 'polymer'  ? (POLYMERS.includes(picked) ? picked : null)
+    : null;
+
+  const submit = () => {
+    if (!finalLabel || !grams) return;
+    const v = parseFloat(grams) || 0;
+    onAdd({
+      id: uuid(),
+      role,
+      label: finalLabel,
+      grams_per_L: v,
+      active_g_per_L: role === 'polymer' ? v : null,
+      short: finalShort,
+    });
+  };
+
+  const titleByRole = { surfactant: 'Add surfactant', polymer: 'Add polymer', other: 'Add base / additive' };
+
+  return (
+    <div className="fixed inset-0 z-30 flex items-end" onClick={onCancel}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative w-full bg-white rounded-t-2xl border-t border-gray-200 sheet-enter safe-bottom max-h-[90vh] overflow-y-auto"
+           onClick={e => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <div className="font-semibold text-lg">{titleByRole[role]}</div>
+          <button onClick={onCancel} className="tap text-base text-gray-500 px-2">Close</button>
+        </div>
+        <div className="p-4 space-y-4">
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Pick one</div>
+            <div className="grid grid-cols-2 gap-2">
+              {presets.map(p => (
+                <button key={p}
+                  onClick={() => { setPicked(p); setCustomLabel(''); }}
+                  className={classNames(
+                    'tap rounded-xl border-2 px-3 py-3 text-base text-left',
+                    picked === p ? 'border-black bg-black text-white' : 'border-gray-300 bg-white active:bg-gray-100'
+                  )}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Or type custom</div>
+            <input
+              value={customLabel}
+              onChange={e => { setCustomLabel(e.target.value); setPicked(null); }}
+              placeholder="Custom ingredient name"
+              className="w-full rounded-xl border border-gray-300 px-3 py-3 text-base"
+            />
+          </div>
+
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Amount per 1 liter</div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number" inputMode="decimal" autoFocus
+                value={grams}
+                onChange={e => setGrams(e.target.value)}
+                placeholder="e.g. 35"
+                className="flex-1 rounded-xl border border-gray-300 px-3 py-3 text-lg tabular-nums"
+              />
+              <div className="text-base text-gray-700 font-semibold">g / L</div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <SecondaryBtn onClick={onCancel} className="flex-1">Cancel</SecondaryBtn>
+            <PrimaryBtn onClick={submit} disabled={!finalLabel || !grams} className="flex-1">Add</PrimaryBtn>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   APP ROOT
+   ============================================================ */
+
+function App() {
+  const [state, dispatch] = useReducer(reducer, null, () => migrate(loadState()));
+  useEffect(() => { saveState(state); }, [state]);
+
+  // view: { kind: 'list' } | { kind: 'recipe', id, liters, checked } | { kind: 'edit', id|null }
+  const [view, setView] = useState({ kind: 'list' });
+
+  if (view.kind === 'list') {
+    return <RecipeList
+      recipes={state.recipes}
+      onOpen={(id) => setView({ kind: 'recipe', id, liters: null, checked: {} })}
+      onNew={() => setView({ kind: 'edit', id: null })}
+      onResetAll={() => {
+        if (window.confirm('Reset all recipes to defaults? This will replace everything.')) {
+          dispatch({ type: 'RESET' });
+        }
+      }}
+    />;
+  }
+
+  if (view.kind === 'recipe') {
+    const recipe = state.recipes.find(r => r.id === view.id);
+    if (!recipe) { setView({ kind: 'list' }); return null; }
+    return <RecipeDetail
+      recipe={recipe}
+      viewState={view}
+      setViewState={(s) => setView(s)}
+      onBack={() => setView({ kind: 'list' })}
+      onEdit={() => setView({ kind: 'edit', id: recipe.id })}
+      onDelete={() => {
+        if (window.confirm(`Delete "${autoName(recipe)}"?`)) {
+          dispatch({ type: 'DELETE_RECIPE', id: recipe.id });
+          setView({ kind: 'list' });
+        }
+      }}
+    />;
+  }
+
+  if (view.kind === 'edit') {
+    const recipe = view.id ? state.recipes.find(r => r.id === view.id) : null;
+    return <RecipeEditor
+      recipe={recipe}
+      onCancel={() => setView(recipe
+        ? { kind: 'recipe', id: recipe.id, liters: null, checked: {} }
+        : { kind: 'list' })}
+      onSave={(saved) => {
+        if (recipe) dispatch({ type: 'UPDATE_RECIPE', recipe: saved });
+        else dispatch({ type: 'ADD_RECIPE', recipe: saved });
+        setView({ kind: 'recipe', id: saved.id, liters: null, checked: {} });
+      }}
+      onDelete={recipe ? () => {
+        if (window.confirm(`Delete "${autoName(recipe)}"?`)) {
+          dispatch({ type: 'DELETE_RECIPE', id: recipe.id });
+          setView({ kind: 'list' });
+        }
+      } : null}
+    />;
+  }
+
+  return null;
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
