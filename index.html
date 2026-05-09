@@ -408,17 +408,40 @@ function SecondaryBtn({ onClick, children, className }) {
   );
 }
 
+function TabBar({ tab, setTab }) {
+  const tabs = [
+    { id: 'recipes', label: 'Recipes' },
+    { id: 'field',   label: 'Field'   },
+    { id: 'history', label: 'History' },
+  ];
+  return (
+    <div className="safe-bottom border-t border-gray-200 bg-white flex">
+      {tabs.map(t => (
+        <button key={t.id} onClick={() => setTab(t.id)}
+          className={classNames(
+            'tap flex-1 py-2 text-sm font-semibold',
+            tab === t.id ? 'text-black border-t-2 border-black -mt-px' : 'text-gray-400'
+          )}>
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* ============================================================
    RECIPE LIST
    ============================================================ */
 
-function RecipeList({ recipes, onOpen, onNew, onResetAll }) {
+function RecipeList({ recipes, onOpen, onNew, onResetAll, onSettings }) {
   const sorted = useMemo(() => [...recipes].sort((a, b) => autoName(a).localeCompare(autoName(b))), [recipes]);
   return (
     <div className="flex flex-col h-full">
-      <Header title="Recipes" right={
-        <button onClick={onNew} className="tap px-3 -mr-3 text-base font-semibold">+ New</button>
-      } />
+      <Header
+        left={<button onClick={onSettings} className="tap px-3 -ml-3 text-xl">⚙️</button>}
+        title="Recipes"
+        right={<button onClick={onNew} className="tap px-3 -mr-3 text-base font-semibold">+ New</button>}
+      />
       <div className="flex-1 overflow-y-auto">
         {sorted.length === 0 ? (
           <div className="text-center py-16 px-4">
@@ -441,9 +464,6 @@ function RecipeList({ recipes, onOpen, onNew, onResetAll }) {
             ))}
           </ul>
         )}
-      </div>
-      <div className="safe-bottom border-t border-gray-200 p-3 text-center">
-        <button onClick={onResetAll} className="text-sm text-gray-500 underline">Reset to default recipes</button>
       </div>
     </div>
   );
@@ -791,6 +811,38 @@ function AddRowSheet({ role, onAdd, onCancel }) {
   );
 }
 
+function SettingsScreen({ state, onBack, onReset }) {
+  return (
+    <div className="flex flex-col h-full">
+      <Header left={<button onClick={onBack} className="tap px-2 -ml-2 text-base">‹ Back</button>} title="Settings" />
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <button onClick={onReset}
+          className="tap w-full rounded-xl px-4 py-3 border border-red-300 text-red-600 font-semibold active:bg-red-50">
+          Reset to default recipes
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FieldTab({ state, dispatch }) {
+  return (
+    <div className="flex flex-col h-full">
+      <Header title="Field" />
+      <div className="flex-1 flex items-center justify-center text-gray-400">Coming soon</div>
+    </div>
+  );
+}
+
+function HistoryTab({ state }) {
+  return (
+    <div className="flex flex-col h-full">
+      <Header title="History" />
+      <div className="flex-1 flex items-center justify-center text-gray-400">Coming soon</div>
+    </div>
+  );
+}
+
 /* ============================================================
    APP ROOT
    ============================================================ */
@@ -799,62 +851,85 @@ function App() {
   const [state, dispatch] = useReducer(reducer, null, () => migrate(loadState()));
   useEffect(() => { saveState(state); }, [state]);
 
-  // view: { kind: 'list' } | { kind: 'recipe', id, liters, checked } | { kind: 'edit', id|null }
+  const [tab, setTab] = useState('recipes');
   const [view, setView] = useState({ kind: 'list' });
 
-  if (view.kind === 'list') {
-    return <RecipeList
-      recipes={state.recipes}
-      onOpen={(id) => setView({ kind: 'recipe', id, liters: null, checked: {} })}
-      onNew={() => setView({ kind: 'edit', id: null })}
-      onResetAll={() => {
-        if (window.confirm('Reset all recipes to defaults? This will replace everything.')) {
-          dispatch({ type: 'RESET' });
-        }
-      }}
-    />;
+  let content = null;
+
+  if (tab === 'recipes') {
+    if (view.kind === 'list') {
+      content = <RecipeList
+        recipes={state.recipes}
+        onOpen={(id) => setView({ kind: 'recipe', id, liters: null, checked: {} })}
+        onNew={() => setView({ kind: 'edit', id: null })}
+        onResetAll={() => {
+          if (window.confirm('Reset all recipes to defaults? This will replace everything.')) {
+            dispatch({ type: 'RESET' });
+          }
+        }}
+        onSettings={() => setView({ kind: 'settings' })}
+      />;
+    } else if (view.kind === 'recipe') {
+      const recipe = state.recipes.find(r => r.id === view.id);
+      if (!recipe) { setView({ kind: 'list' }); return null; }
+      content = <RecipeDetail
+        recipe={recipe}
+        viewState={view}
+        setViewState={setView}
+        onBack={() => setView({ kind: 'list' })}
+        onEdit={() => setView({ kind: 'edit', id: recipe.id })}
+        onDelete={() => {
+          if (window.confirm(`Delete "${autoName(recipe)}"?`)) {
+            dispatch({ type: 'DELETE_RECIPE', id: recipe.id });
+            setView({ kind: 'list' });
+          }
+        }}
+        onMakeBatch={(batch) => dispatch({ type: 'ADD_BATCH', batch })}
+        nextBatchNumber={state.next_batch_number}
+      />;
+    } else if (view.kind === 'edit') {
+      const recipe = view.id ? state.recipes.find(r => r.id === view.id) : null;
+      content = <RecipeEditor
+        recipe={recipe}
+        onCancel={() => setView(recipe
+          ? { kind: 'recipe', id: recipe.id, liters: null, checked: {} }
+          : { kind: 'list' })}
+        onSave={(saved) => {
+          if (recipe) dispatch({ type: 'UPDATE_RECIPE', recipe: saved });
+          else dispatch({ type: 'ADD_RECIPE', recipe: saved });
+          setView({ kind: 'recipe', id: saved.id, liters: null, checked: {} });
+        }}
+        onDelete={recipe ? () => {
+          if (window.confirm(`Delete "${autoName(recipe)}"?`)) {
+            dispatch({ type: 'DELETE_RECIPE', id: recipe.id });
+            setView({ kind: 'list' });
+          }
+        } : null}
+      />;
+    } else if (view.kind === 'settings') {
+      content = <SettingsScreen
+        state={state}
+        onBack={() => setView({ kind: 'list' })}
+        onReset={() => {
+          if (window.confirm('Reset all data to defaults? This cannot be undone.')) {
+            dispatch({ type: 'RESET' });
+            setView({ kind: 'list' });
+          }
+        }}
+      />;
+    }
+  } else if (tab === 'field') {
+    content = <FieldTab state={state} dispatch={dispatch} />;
+  } else if (tab === 'history') {
+    content = <HistoryTab state={state} />;
   }
 
-  if (view.kind === 'recipe') {
-    const recipe = state.recipes.find(r => r.id === view.id);
-    if (!recipe) { setView({ kind: 'list' }); return null; }
-    return <RecipeDetail
-      recipe={recipe}
-      viewState={view}
-      setViewState={(s) => setView(s)}
-      onBack={() => setView({ kind: 'list' })}
-      onEdit={() => setView({ kind: 'edit', id: recipe.id })}
-      onDelete={() => {
-        if (window.confirm(`Delete "${autoName(recipe)}"?`)) {
-          dispatch({ type: 'DELETE_RECIPE', id: recipe.id });
-          setView({ kind: 'list' });
-        }
-      }}
-    />;
-  }
-
-  if (view.kind === 'edit') {
-    const recipe = view.id ? state.recipes.find(r => r.id === view.id) : null;
-    return <RecipeEditor
-      recipe={recipe}
-      onCancel={() => setView(recipe
-        ? { kind: 'recipe', id: recipe.id, liters: null, checked: {} }
-        : { kind: 'list' })}
-      onSave={(saved) => {
-        if (recipe) dispatch({ type: 'UPDATE_RECIPE', recipe: saved });
-        else dispatch({ type: 'ADD_RECIPE', recipe: saved });
-        setView({ kind: 'recipe', id: saved.id, liters: null, checked: {} });
-      }}
-      onDelete={recipe ? () => {
-        if (window.confirm(`Delete "${autoName(recipe)}"?`)) {
-          dispatch({ type: 'DELETE_RECIPE', id: recipe.id });
-          setView({ kind: 'list' });
-        }
-      } : null}
-    />;
-  }
-
-  return null;
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-hidden relative">{content}</div>
+      <TabBar tab={tab} setTab={setTab} />
+    </div>
+  );
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
