@@ -941,10 +941,11 @@ function FieldTab({ state, dispatch }) {
   const recipes = state.recipes;
 
   // guard: if viewing session/rating but no active session exists, go home
-  if ((fieldView.kind === 'session' || fieldView.kind === 'rating') && !activeSession) {
-    setFieldView({ kind: 'home' });
-    return null;
-  }
+  React.useEffect(() => {
+    if ((fieldView.kind === 'session' || fieldView.kind === 'rating') && !activeSession) {
+      setFieldView({ kind: 'home' });
+    }
+  }, [activeSession]);
 
   if (fieldView.kind === 'start-session') {
     return <StartSessionSheet
@@ -984,7 +985,7 @@ function FieldTab({ state, dispatch }) {
           : [...(activeSession.batch_ratings || []), batchRating];
         dispatch({ type: 'UPDATE_SESSION', session: { ...activeSession, batch_ratings: updatedRatings } });
         const batch = state.batches.find(b => b.id === fieldView.batchId);
-        if (batch && batch.status !== 'tested') {
+        if (batch && batch.status !== 'tested' && ratingCount(batchRating) > 0) {
           dispatch({ type: 'UPDATE_BATCH', batch: { ...batch, status: 'tested' } });
         }
         setFieldView({ kind: 'session' });
@@ -1670,11 +1671,6 @@ function App() {
         recipes={state.recipes}
         onOpen={(id) => setView({ kind: 'recipe', id, liters: null, checked: {} })}
         onNew={() => setView({ kind: 'edit', id: null })}
-        onResetAll={() => {
-          if (window.confirm('Reset all recipes to defaults? This will replace everything.')) {
-            dispatch({ type: 'RESET' });
-          }
-        }}
         onSettings={() => setView({ kind: 'settings' })}
       />;
     } else if (view.kind === 'recipe') {
