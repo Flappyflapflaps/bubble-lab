@@ -42,7 +42,7 @@ const { useState, useEffect, useMemo, useReducer } = React;
    ============================================================ */
 
 const STORAGE_KEY = 'bubble-lab-v1';
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 const SURFACTANTS = ['SLES', 'AOS', 'CAPB', 'LDAO'];
 const POLYMERS = ['PEO', 'PAM', 'HEC'];
@@ -198,19 +198,34 @@ function loadState() {
 
 function saveState(state) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: SCHEMA_VERSION, recipes: state.recipes }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: SCHEMA_VERSION,
+      recipes: state.recipes,
+      batches: state.batches,
+      sessions: state.sessions,
+      next_batch_number: state.next_batch_number,
+    }));
   } catch (e) { console.error(e); }
 }
 
-// Migrate v1 (stocks + ingredients[stock_id, target_type, target_value]) → v2 (rows)
 function migrate(loaded) {
-  if (!loaded) return { version: SCHEMA_VERSION, recipes: seedRecipes() };
+  if (!loaded) return {
+    version: SCHEMA_VERSION, recipes: seedRecipes(),
+    batches: [], sessions: [], next_batch_number: 1,
+  };
 
-  // Already v2: pass through, but ensure shape.
+  // v2 data: recipes already have rows array
   if ((loaded.recipes || []).every(r => Array.isArray(r.rows))) {
-    return { version: SCHEMA_VERSION, recipes: loaded.recipes };
+    return {
+      version: SCHEMA_VERSION,
+      recipes: loaded.recipes,
+      batches: loaded.batches || [],
+      sessions: loaded.sessions || [],
+      next_batch_number: loaded.next_batch_number || 1,
+    };
   }
 
+  // v1 → v2 migration (original logic preserved)
   const stocksById = {};
   for (const s of loaded.stocks || []) stocksById[s.id] = s;
 
@@ -220,62 +235,40 @@ function migrate(loaded) {
     const rows = (r.ingredients || []).map(ing => {
       const stock = stocksById[ing.stock_id];
       if (!stock) return null;
-
-      let gramsPerL = 0;
-      let activeGperL = null;
-
+      let gramsPerL = 0, activeGperL = null;
       if (ing.target_type === 'mass_g') {
         gramsPerL = ing.target_value / liters;
         if (stock.category === 'polymer') activeGperL = gramsPerL;
       } else if (ing.target_type === 'volume_mL') {
-        gramsPerL = ing.target_value / liters; // density ~1
+        gramsPerL = ing.target_value / liters;
       } else if (ing.target_type === 'ppm') {
         if (stock.ingredient_type === 'polymer_concentrate' && stock.concentration_unit === 'g_per_mL') {
           activeGperL = ing.target_value / 1000;
           gramsPerL = activeGperL / stock.concentration_value;
-        } else {
-          gramsPerL = ing.target_value / 1000;
-          activeGperL = gramsPerL;
-        }
+        } else { gramsPerL = ing.target_value / 1000; activeGperL = gramsPerL; }
       } else if (ing.target_type === 'percent_active') {
         activeGperL = ing.target_value * 10;
         const af = stock.concentration_unit === 'percent_active' ? stock.concentration_value / 100 : 1;
         gramsPerL = af > 0 ? activeGperL / af : 0;
       }
-
-      let role = 'other';
-      let short = null;
+      let role = 'other', short = null;
       if (['anionic', 'amphoteric', 'nonionic'].includes(stock.category)) {
-        role = 'surfactant';
-        short = shortenSurfactantName(stock.name);
-      } else if (stock.category === 'polymer') {
-        role = 'polymer';
-        short = stock.polymer_type || null;
-      }
-
-      return {
-        id: uuid(),
-        role,
-        label: stock.name,
-        grams_per_L: round(gramsPerL, 4),
-        active_g_per_L: activeGperL != null ? round(activeGperL, 4) : null,
-        short,
-      };
+        role = 'surfactant'; short = shortenSurfactantName(stock.name);
+      } else if (stock.category === 'polymer') { role = 'polymer'; short = stock.polymer_type || null; }
+      return { id: uuid(), role, label: stock.name, grams_per_L: round(gramsPerL, 4),
+               active_g_per_L: activeGperL != null ? round(activeGperL, 4) : null, short };
     }).filter(Boolean);
-
-    return {
-      id: r.id || uuid(),
-      custom_name: null, // force auto-name
-      notes: r.protocol_notes || '',
-      rows,
-    };
+    return { id: r.id || uuid(), custom_name: null, notes: r.protocol_notes || '', rows };
   });
 
-  // Add any missing seed recipes (dedup by auto-name)
   const seeds = seedRecipes();
   const existingNames = new Set(migrated.map(autoName));
   const toAdd = seeds.filter(s => !existingNames.has(autoName(s)));
-  return { version: SCHEMA_VERSION, recipes: [...migrated, ...toAdd] };
+  return {
+    version: SCHEMA_VERSION,
+    recipes: [...migrated, ...toAdd],
+    batches: [], sessions: [], next_batch_number: 1,
+  };
 }
 
 /* ============================================================
@@ -287,7 +280,17 @@ function reducer(state, a) {
     case 'ADD_RECIPE':    return { ...state, recipes: [...state.recipes, a.recipe] };
     case 'UPDATE_RECIPE': return { ...state, recipes: state.recipes.map(r => r.id === a.recipe.id ? a.recipe : r) };
     case 'DELETE_RECIPE': return { ...state, recipes: state.recipes.filter(r => r.id !== a.id) };
-    case 'RESET':         return { version: SCHEMA_VERSION, recipes: seedRecipes() };
+    case 'ADD_BATCH':
+      return { ...state, batches: [...state.batches, a.batch], next_batch_number: state.next_batch_number + 1 };
+    case 'UPDATE_BATCH':
+      return { ...state, batches: state.batches.map(b => b.id === a.batch.id ? a.batch : b) };
+    case 'DELETE_BATCH':
+      return { ...state, batches: state.batches.filter(b => b.id !== a.id) };
+    case 'ADD_SESSION':
+      return { ...state, sessions: [...state.sessions, a.session] };
+    case 'UPDATE_SESSION':
+      return { ...state, sessions: state.sessions.map(s => s.id === a.session.id ? a.session : s) };
+    case 'RESET':         return { version: SCHEMA_VERSION, recipes: seedRecipes(), batches: [], sessions: [], next_batch_number: 1 };
     default: return state;
   }
 }
