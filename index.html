@@ -416,15 +416,26 @@ function migrate(loaded) {
     const cleanedRecipes = (loaded.recipes || []).map(r =>
       OLD_NAMES.has(r.custom_name) ? { ...r, custom_name: '' } : r
     );
+    // Step 1: Remove bare-name stubs (corrupted records from previous migrations)
+    const BARE_REMOVE = new Set(['AOS', 'SLES']);
+    let recipes = cleanedRecipes.filter(r => !BARE_REMOVE.has(autoName(r)));
+    // Step 2: Deduplicate by autoName (keep first occurrence)
+    const seen = new Set();
+    recipes = recipes.filter(r => {
+      const n = autoName(r);
+      if (seen.has(n)) return false;
+      seen.add(n);
+      return true;
+    });
     const seeds = seedRecipes();
-    const existingNames = new Set(cleanedRecipes.map(r => r.custom_name || autoName(r)));
+    const existingNames = new Set(recipes.map(r => r.custom_name || autoName(r)));
     const toAdd = seeds.filter(s => {
       const name = s.custom_name || autoName(s);
       return !existingNames.has(name);
     });
     return {
       version: SCHEMA_VERSION,
-      recipes: [...cleanedRecipes, ...toAdd],
+      recipes: [...recipes, ...toAdd],
       batches: loaded.batches || [],
       sessions: loaded.sessions || [],
       next_batch_number: loaded.next_batch_number || 1,
