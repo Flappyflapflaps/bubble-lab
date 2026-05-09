@@ -946,6 +946,11 @@ function MakeBatchSheet({ recipe, defaultVolume, nextBatchNumber, onMake, onCanc
 }
 
 function SettingsScreen({ state, dispatch, onClose }) {
+  const [showAddForm, setShowAddForm] = React.useState(false);
+  const [newName, setNewName]         = React.useState('');
+  const [newGL, setNewGL]             = React.useState('');
+  const [newAqueous, setNewAqueous]   = React.useState(true);
+
   const handleExport = () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -965,6 +970,22 @@ function SettingsScreen({ state, dispatch, onClose }) {
     }
   };
 
+  const handleAddConcentrate = () => {
+    const gL = parseFloat(newGL);
+    if (!newName.trim() || !gL || gL <= 0) return;
+    dispatch({
+      type: 'ADD_CONCENTRATE',
+      concentrate: { id: uuid(), name: newName.trim(), gPerML: gL / 1000, aqueous: newAqueous }
+    });
+    setNewName(''); setNewGL(''); setNewAqueous(true); setShowAddForm(false);
+  };
+
+  const handleDelete = (c) => {
+    if (window.confirm(`Remove "${c.name}" stock solution?`)) {
+      dispatch({ type: 'DELETE_CONCENTRATE', id: c.id });
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <Header left={<button onClick={onClose} className="tap px-2 -ml-2 text-base">‹ Back</button>} title="Settings" />
@@ -974,6 +995,82 @@ function SettingsScreen({ state, dispatch, onClose }) {
           <div className="text-sm font-semibold text-gray-900 mb-1">Export Data</div>
           <div className="text-sm text-gray-500 mb-3">Download a JSON backup of all your recipes, batches, and sessions.</div>
           <SecondaryBtn onClick={handleExport}>Export JSON</SecondaryBtn>
+        </div>
+
+        {/* Stock solutions section */}
+        <div className="border-t border-gray-200 px-4 py-5">
+          <div className="text-sm font-semibold text-gray-900 mb-1">Stock solutions</div>
+          <div className="text-sm text-gray-500 mb-3">Concentrates used in your recipes. Volumes are shown in the ingredient checklist.</div>
+
+          {/* Existing concentrates list */}
+          {(state.concentrates || []).map(c => {
+            const gL = c.gPerML * 1000;
+            const gLStr = gL.toFixed(gL >= 1 ? 1 : 2) + ' g/L';
+            return (
+              <div key={c.id} className="flex items-center justify-between py-2 border-b border-gray-100">
+                <div>
+                  <span className="text-sm font-medium">{c.name}</span>
+                  <span className="text-xs text-gray-500 ml-2">{gLStr}</span>
+                  <span className="ml-2 text-xs bg-gray-100 px-1.5 py-0.5 rounded">{c.aqueous ? 'aqueous' : 'alcohol'}</span>
+                </div>
+                <button onClick={() => handleDelete(c)} className="text-gray-400 text-lg leading-none tap">✕</button>
+              </div>
+            );
+          })}
+
+          {/* Add new concentrate form */}
+          {showAddForm ? (
+            <div className="mt-3">
+              <input
+                type="text"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                placeholder="e.g. HEC"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2"
+              />
+              <input
+                type="number"
+                value={newGL}
+                onChange={e => setNewGL(e.target.value)}
+                placeholder="g/L"
+                step="0.001"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2"
+              />
+              <div className="flex gap-2 mb-2">
+                <button
+                  onClick={() => setNewAqueous(true)}
+                  className={classNames(
+                    'flex-1 rounded-lg px-3 py-2 text-sm font-medium',
+                    newAqueous ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+                  )}>
+                  Water-based
+                </button>
+                <button
+                  onClick={() => setNewAqueous(false)}
+                  className={classNames(
+                    'flex-1 rounded-lg px-3 py-2 text-sm font-medium',
+                    !newAqueous ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+                  )}>
+                  Alcohol-based
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => { setShowAddForm(false); setNewName(''); setNewGL(''); setNewAqueous(true); }}
+                  className="tap flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600">
+                  Cancel
+                </button>
+                <button onClick={handleAddConcentrate}
+                  disabled={!newName.trim() || !newGL || parseFloat(newGL) <= 0}
+                  className="tap flex-1 bg-black text-white rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40">
+                  Add
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setShowAddForm(true)} className="text-sm text-black font-medium underline tap mt-3">
+              ＋ Add stock solution
+            </button>
+          )}
         </div>
 
         {/* Reset to defaults section */}
