@@ -1259,7 +1259,7 @@ function BatchRatingScreen({ batchId, batches, recipes, initialRating, onDone, o
   const batch = batches?.find(b => b.id === batchId);
   const recipe = batch ? recipes?.find(r => r.id === batch.recipe_id) : null;
   const title = batch
-    ? `Batch #${batch.number}${recipe ? ' · ' + recipe.name : ''}`
+    ? `Batch #${batch.number}${recipe ? ' · ' + autoName(recipe) : ''}`
     : 'Rate batch';
 
   const setStars = (key, stars) => {
