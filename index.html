@@ -496,7 +496,7 @@ function RecipeList({ recipes, onOpen, onNew, onResetAll, onSettings }) {
    RECIPE DETAIL — VOLUME PICK + CHECKLIST
    ============================================================ */
 
-function RecipeDetail({ recipe, viewState, setViewState, onBack, onEdit, onDelete, onMakeBatch, nextBatchNumber }) {
+function RecipeDetail({ recipe, viewState, setViewState, onBack, onEdit, onDelete, onMakeBatch, nextBatchNumber, state }) {
   const liters = viewState.liters;
   const checked = viewState.checked || {};
   const [makingBatch, setMakingBatch] = useState(false);
@@ -1764,6 +1764,7 @@ function App() {
         }}
         onMakeBatch={(batch) => dispatch({ type: 'ADD_BATCH', batch })}
         nextBatchNumber={state.next_batch_number}
+        state={state}
       />;
     } else if (view.kind === 'edit') {
       const recipe = view.id ? state.recipes.find(r => r.id === view.id) : null;
