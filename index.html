@@ -414,6 +414,18 @@ function seedRecipes() {
         { id: uuid(), role: 'surfactant', label: 'LDAO',                        grams_per_L: 8.0,   active_g_per_L: null,  short: 'LDAO',  skip_convert: false },
       ],
     },
+    {
+      id: uuid(),
+      custom_name: '',
+      notes: 'Surfactant: Bio-Terge AS-40 (Alpha Olefin Sulfonate). Water divided into 900 g and 100 g portions. J-Lube measured as dry powder (~1/8 tsp).',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled Water',             grams_per_L: 1000,  active_g_per_L: null,  short: null,     skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'AOS-40 (Bio-Terge AS-40)',    grams_per_L: 40,    active_g_per_L: null,  short: 'AOS',    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'J-Lube (dry)',                grams_per_L: 0.26,  active_g_per_L: 0.26,  short: 'J Lube', skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Citric Acid Monohydrate',     grams_per_L: 0.58,  active_g_per_L: null,  short: null,     skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Lactic Acid 88%',             grams_per_L: 1.7,   active_g_per_L: null,  short: null,     skip_convert: false },
+      ],
+    },
   ];
 }
 
