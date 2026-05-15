@@ -235,8 +235,304 @@ function seedRecipes() {
   return [
     {
       id: uuid(),
-      custom_name: null,
+      custom_name: 'World-Class v2 — Fairy Architecture Recreated (SLES+CAPB+LDAO + HEC, grounded honest)',
       notes:
+        'Grounded honest rewrite — see "obsidian-vault/research/00-world-class-recipe-v2.md". Recreates Fairy\'s working surfactant architecture (SLES + CAPB + LDAO) from raw materials, drops the cosmetic junk (perfume, dye, preservatives, salt thickener, PEG-cocoate, citrate/NaOH pH adjusters), and adds the two bubble-specific things Fairy lacks: 10% glycerin (Pasquet 2022 measured 140× lifetime) and one polymer at its empirical working range. Total surfactant actives 2.0% — slight margin above Pasquet\'s 1.5% empirical ceiling.\n\n' +
+        'TOP 3 #1 — THE DAILY DRIVER. Three working recipes form the Top 3 (see "obsidian-vault/research/11-top-3-brew-sheet.md" for the side-by-side comparison): #1 this Fairy-architecture HEC (default), #2 AOS Wind-Tolerant (windy days), #3 816 g Corrected (calm-air record hunt). Same three rules apply to all three — distilled water only, EDTA for chelation, slow paddle never blender.\n\nWHY THIS IS #1 (longest shelf life, most forgiving, hardest to mess up):\n' +
+        '• Frazier 2020 MEASURED raw SDS ≈ 5 s film life vs Dawn ≈ 22 s on 100 cm². Raw anionic ALONE underperforms dish soap 4×. Reason: dish soap is SLES + CAPB + LDAO synergy.\n' +
+        '• Pasquet 2022 MEASURED pH neutralisation to 7 HURTS lifetime. The previous v2 buffered to pH 7.4 with DKP — directly contradicted. We use free-running pH (lands ~7.5–8.0).\n' +
+        '• Pasquet 2022 MEASURED peak lifetime at 10% glycerin (140× vs 0%). The previous v2 used 8%. We now use 10%.\n' +
+        '• AOS has near-zero documented giant-bubble recipes in the open practitioner literature, but appears to be the secret in pro UK commercial mixes (Bubble Inc Supapop, Bubblyheaven). SLES + CAPB appears in Flavour Blaster commercial INCI (water/SLES/CAPB/HEC/glycerin/preservative) and in Frazier\'s Dawn benchmark. This seed follows the well-documented Fairy-recreation path; the AOS path is the separate wind-tolerant variant seed (Section 13 of the recipe doc).\n\n' +
+        'THIS SEED USES HEC POLYMER (matches commercial Flavour Blaster INCI). Two alternative polymer variants exist as separate seeds — guar (Pasquet measured optimum) and J-Lube (BLM/HECP practitioner). Run all three side-by-side as a bake-off — winner depends on your water, wand, and conditions.\n\n' +
+        'MIXING PROTOCOL — no buffer, no acid, simple:\n\n' +
+        '1) Polymer slurry: in a 250 mL beaker, add 100 g glycerin. Sprinkle in 2.2 g HEC Cellosize QP-100MH while stirring with a dry spatula. Glycerin pre-wets the polymer so it doesn\'t fish-eye.\n' +
+        '2) Water + EDTA: 875 g distilled water in a 2 L bucket. Add 0.5 g disodium EDTA, stir to dissolve. Water optically clear.\n' +
+        '3) Polymer hydration: slow paddle (NOT high-shear blender — that scissions the polymer). Pour glycerin/polymer slurry into vortex centre over 30 s. Gentle paddle 5 min only. Cover. Rest UNDISTURBED 12–24 hr.\n' +
+        '4) Surfactant integration (T + 24 hr): slow paddle. Pour 20 g SLES-70 over 30 s, then 15 g CAPB-30 over 30 s, then 5 g LDAO-30 over 30 s. Fold gently (NO whipping — don\'t make foam in the bucket) 5 min. Mix optically clear, very faintly straw.\n' +
+        '5) Rest 24–48 hr cool dark. Performance peaks 48–72 hr from initial mix.\n' +
+        '6) Decant 200–500 mL for sessions. Shelf life 2 weeks unrefrigerated, 6 weeks refrigerated.\n\n' +
+        'NO pH check, NO titration, NO IPA, NO salt, NO buffer. Deliberate — the previous v2\'s DKP buffer to pH 7.4 was directly contradicted by Pasquet\'s controlled experiment.\n\n' +
+        'BENCHMARK ALWAYS: run alongside Pasquet 2022 reference (4% Fairy Original + 0.1% guar + 10% glycerin) on the same day, same wand, same wind. If v2-grounded doesn\'t outperform Pasquet\'s reference, the recipe needs further tuning.\n\n' +
+        'HARD-WATER NOTE: Scotland soft (30–70 mg/L CaCO₃) → EDTA 0.5 g/L is fine. London/Hull very hard → bump EDTA to 2.0 g/L. Distilled water always cleaner.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled water',         grams_per_L: 875,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin USP',  grams_per_L: 100,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Disodium EDTA',           grams_per_L: 0.5,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'HEC Cellosize QP-100MH',  grams_per_L: 2.2,   active_g_per_L: 2.2,   short: 'HEC',   skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'SLES-70 paste',           grams_per_L: 20,    active_g_per_L: null,  short: 'SLES',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'CAPB-30',                 grams_per_L: 15,    active_g_per_L: null,  short: 'CAPB',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'LDAO-30 (Ammonyx LO)',    grams_per_L: 5,     active_g_per_L: null,  short: 'LDAO',  skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'World-Class v2 (Guar bake-off variant) — Pasquet measured optimum',
+      notes:
+        'Polymer bake-off variant of v2 grounded honest. Same SLES+CAPB+LDAO surfactant stack, same 10% glycerin, same free-running pH, same EDTA — but swaps HEC for guar gum at 0.15% w/v (1.5 g/L). Why guar: Pasquet 2022 MEASURED 0.1% guar as the optimum with 4% Fairy + 10% glycerin. Scaled up to 0.15% here to compensate for the lower total surfactant on this base.\n\n' +
+        'GUAR PROS: Pasquet\'s measured optimum; cheap food-grade ingredient; quick to slurry; biodegradable.\n' +
+        'GUAR CONS: calcium-sensitive (must chelate hard with EDTA — distilled water mandatory in hard-water areas); needs full 12 hr hydration; biological substrate (no preservative = use within 2 weeks).\n\n' +
+        'MIXING IDENTICAL TO v2 HEC except substitute 1.5 g guar gum for 2.2 g HEC at Step 1.\n\n' +
+        'Run side-by-side against the HEC seed and the J-Lube seed on the same day. Pasquet\'s controlled experiment showed her recipe peaked at her measured dose — but her recipe used Fairy as the surfactant, not SLES+CAPB+LDAO. The transfer is theoretical; the bake-off resolves it.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled water',         grams_per_L: 875,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin USP',  grams_per_L: 100,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Disodium EDTA',           grams_per_L: 0.5,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'Guar gum (food grade)',   grams_per_L: 1.5,   active_g_per_L: 1.5,   short: 'Guar',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'SLES-70 paste',           grams_per_L: 20,    active_g_per_L: null,  short: 'SLES',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'CAPB-30',                 grams_per_L: 15,    active_g_per_L: null,  short: 'CAPB',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'LDAO-30 (Ammonyx LO)',    grams_per_L: 5,     active_g_per_L: null,  short: 'LDAO',  skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'World-Class v2 (J-Lube bake-off variant) — polydisperse PEO practitioner path',
+      notes:
+        'Polymer bake-off variant of v2 grounded honest. Same SLES+CAPB+LDAO surfactant stack, same 10% glycerin, same free-running pH, same EDTA — but swaps HEC for J-Lube at 0.4 g/L (= ~0.1 g/L active PEO with sucrose carrier). Why J-Lube: practitioner-tested in BLM and HECP recipes; J-Lube\'s PEO is intrinsically polydisperse (up to 8 MDa tail) which matches Frazier/Burton 2020\'s MEASURED finding that polydisperse beats monodisperse.\n\n' +
+        'J-LUBE PROS: polydispersity built in (no aging required); cheap (Blackpool Aquatics £18/284 g); fast hydration (sucrose carrier disperses cleanly into glycerin).\n' +
+        'J-LUBE CONS: sucrose carrier (75% of mass) is biological substrate — shorter shelf life, must refrigerate; lower mass-efficient extensional viscosity than long-chain HPAM.\n\n' +
+        'MIXING IDENTICAL TO v2 HEC except substitute 0.4 g J-Lube for 2.2 g HEC at Step 1.\n\n' +
+        'Run side-by-side against the HEC seed and the guar seed on the same day, same wand, same wind. Frazier\'s polydispersity finding suggests J-Lube should outperform monodisperse polymers at matched conditions — but his measurement was on a Dawn base, not SLES+CAPB+LDAO. Transfer is theoretical; bake-off resolves it.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled water',         grams_per_L: 875,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin USP',  grams_per_L: 100,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Disodium EDTA',           grams_per_L: 0.5,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'J-Lube (PEO + sucrose)',  grams_per_L: 0.4,   active_g_per_L: 0.1,   short: 'J Lube',skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'SLES-70 paste',           grams_per_L: 20,    active_g_per_L: null,  short: 'SLES',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'CAPB-30',                 grams_per_L: 15,    active_g_per_L: null,  short: 'CAPB',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'LDAO-30 (Ammonyx LO)',    grams_per_L: 5,     active_g_per_L: null,  short: 'LDAO',  skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'World-Class v2 Wind-Tolerant — AOS + APAM + PEO at neutral pH (science-supported alternative)',
+      notes:
+        'TOP 3 #2 — THE WIND RECIPE — see Section 13 of "obsidian-vault/research/00-world-class-recipe-v2.md", full citation trail in "obsidian-vault/research/09-aos-science-deep-dive.md", and the full Top-3 brew sheet at "obsidian-vault/research/11-top-3-brew-sheet.md". Science-supported alternative architecture optimised for wind tolerance — the answer to "huge bubbles in calm but they die in any wind."\n\n' +
+        'WHY THIS EXISTS:\n' +
+        '• The user\'s previous best 816 g recipe (SLES+CAPB+LDAO+APAM+PEO at pH 6.1, sorbic-acid-locked) gave 100 ft / 200 ft bubbles in calm air but failed in any wind. Analysis (07-816g-recipe-analysis.md): pH 6.1 sits below CAPB\'s isoelectric pH 6.25, creating a CAPB-SLES coacervate that\'s strong in still air but shear-melts in turbulence.\n' +
+        '• This variant cures the wind-failure by switching to pure-repulsion oscillatory disjoining pressure film. AOS sulfonate + APAM (anionic polyacrylamide) at pH 7.5–8.0 — both anionic, both fully ionised, no coacervate. Film thins by stratification (mesh-fluid expelled one layer at a time) rather than catastrophic drainage; resists shear by depletion-zone osmotic pressure rather than viscoelastic gel.\n\n' +
+        'SCIENCE BACKING (MEASURED, not speculation):\n' +
+        '• Bergeron 1996 Langmuir 12:5751 — oscillatory disjoining pressure up to 200 Pa from polyelectrolyte chain networks at 10 nm thickness.\n' +
+        '• von Klitzing 2002 J. Phys. Chem. B 106:11769 — polyelectrolyte mesh stratification step measurement.\n' +
+        '• Yekeen 2018 J. Ind. Eng. Chem. — AOS+HPAM most stable foam vs commercial baselines.\n' +
+        '• MDPI Energies 2023 16(22):7523 — AOS+HPAM reservoir-stable foam at 140 °C.\n' +
+        '• Farajzadeh 2008 Colloids Surf A 324:35 — AOS NBF transition; AOS film stretchability greater than SDS.\n' +
+        '• Linfield 1972 JAOCS — AOS lime-soap dispersancy (hard-water tolerance).\n' +
+        '• Marinova 2009 — CAPB pI 6.25 is the reason CAPB is omitted from this variant.\n\n' +
+        'TRADE-OFFS VS THE FAIRY-RECREATION MAINLINE:\n' +
+        '• Calm-air bubble size: this variant likely BEST (long extensional viscosity from APAM; stratification stability from oscillatory disjoining pressure).\n' +
+        '• Wind tolerance: this variant BEST (no coacervate, no shear-melt mode).\n' +
+        '• Still-air single-bubble lifetime: Fairy-recreation mainline likely BEST (Pasquet measured 140× lifetime at 10% glycerin with dish-soap synergy at higher G\').\n' +
+        '• Shelf life: 2 weeks (APAM aggregates with trace Ca²⁺); Fairy mainline lasts 2–6 weeks.\n' +
+        '• Cost per 1 L: ~£1.80 vs ~£1.20 for Fairy mainline.\n\n' +
+        'MIXING PROTOCOL — polymer-first, high-shear-AVOID, slow-paddle only:\n\n' +
+        '1) APAM slurry: in a 250 mL beaker, 70 g glycerin + 0.15 g APAM (Flopaam 3330S or 3430S). Stir with a dry spatula until polymer is wetted. It will not dissolve in glycerin alone — just disperse. Cover.\n' +
+        '2) J-Lube slurry: in a 100 mL beaker, 20 g of distilled water + 0.4 g J-Lube. Stir gently 30 s. Cover.\n' +
+        '3) Water + EDTA: 855 g distilled water in a 2 L bucket + 1.0 g tetrasodium EDTA. Stir clear. Slow paddle.\n' +
+        '4) Add APAM/glycerin slurry: pour into vortex centre over 30 s. SLOW PADDLE ONLY — NO BLENDER. High shear cuts APAM chains catastrophically. Fold 5 min. Cover. Rest 6 hr.\n' +
+        '5) Add J-Lube slurry (T + 6 hr): slow paddle, pour over 30 s. Fold 5 min. Rest 6 hr.\n' +
+        '6) AOS + LDAO (T + 12 hr): slow paddle. Add 60 g AOS-40 over 30 s. Then 5 g LDAO-30 over 30 s. Fold 5 min. Mix optically clear, very pale straw, no foam in the bucket.\n' +
+        '7) Final rest (T + 12 hr → T + 60 hr): cover, rest cool dark 48 hr. Performance peaks T + 48–72 hr.\n\n' +
+        'pH CHECK (informational): should land 7.5–8.0 free-running. If below 7.0 add 0.05 g sodium bicarbonate per 1 L. If above 8.5 your distilled water was alkaline — switch source.\n\n' +
+        'CRITICAL: NO CAPB. CAPB pI is 6.25 regardless of anionic partner. Adding CAPB back at any pH below 6.5 brings the coacervate-shear-melt failure mode back. The whole point of this variant is to eliminate that mode.\n\n' +
+        'BENCHMARK ALWAYS: run alongside the Fairy-recreation mainline (HEC seed) on the same day, same wand, same wind. The head-to-head answers whether the science-supported wind-tolerant variant actually outperforms the synergy-based mainline for your conditions.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled water',                     grams_per_L: 855,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin USP',              grams_per_L: 70,    active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Tetrasodium EDTA',                    grams_per_L: 1.0,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'APAM / HPAM 10–20 MDa (Flopaam)',     grams_per_L: 0.15,  active_g_per_L: 0.15,  short: 'APAM',  skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'J-Lube (PEO + sucrose, polydisperse)',grams_per_L: 0.4,   active_g_per_L: 0.1,   short: 'PEO',   skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'AOS-40 (sodium C14-16 olefin sulfonate)', grams_per_L: 60, active_g_per_L: null, short: 'AOS',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'LDAO-30 (Ammonyx LO, optional)',      grams_per_L: 5,     active_g_per_L: null,  short: 'LDAO',  skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'World-Class v2 — 816 g Corrected (your 100 ft / 200 ft recipe, three fixes applied)',
+      notes:
+        'TOP 3 #3 — THE RECORD-HUNT RECIPE. Full Top-3 brew sheet at "obsidian-vault/research/11-top-3-brew-sheet.md". Full failure-mechanism analysis of the original at "obsidian-vault/research/07-816g-recipe-analysis.md". Acid-titration phase-split mechanism at "obsidian-vault/research/10-acid-titration-phase-split.md".\n\n' +
+        'WHY THIS EXISTS: your original 816 g recipe (SLES 35 + CAPB 12 + LDAO 5 + PEO 0.2 + PAM 0.05 + DKP 1.5 + sorbic acid 2 g + lactic acid pH-adjust to 6.1) produced 100 ft up / 200 ft forward bubbles in calm air. Spectacular result, but it failed in any wind, and recent acid-titration attempts caused overnight phase splits. Analysis identified THREE addressable mechanisms:\n\n' +
+        '1) pH 6.1 sits BELOW CAPB isoelectric pH 6.25 → CAPB-SLES coacervate (ionic-crosslinked gel) → strong in still air, shear-melts in wind. Sorbic acid + lactic acid locked pH there. FIX: remove all acid, let pH free-run to 7.5-8.0. Pasquet 2022 measured neutralising hurts lifetime anyway.\n' +
+        '2) Total surfactant 3.0% active exceeded Pasquet 2022 measured 1.5% ceiling for total active. FIX: drop SLES from 35 g to 20 g. Total now 1.91% active.\n' +
+        '3) Citric / lactic acid for chelation phase-splits the mix overnight (citrate is ~10⁷× weaker than EDTA; to chelate anything you have to dose grams, which loads the mix with ~0.06 mol/L ionic strength → Flory-Huggins PAM-PEO phase separation). FIX: EDTA only, no acid.\n\n' +
+        'KEPT FROM YOUR ORIGINAL (the parts that gave 100 ft bubbles): SLES+CAPB+LDAO architecture (proven calm-air monster), dual polymer PEO+PAM (Frazier 2020 polydispersity advantage), 10% glycerin (Pasquet measured peak).\n\n' +
+        'REMOVED: sorbic acid, lactic acid, DKP buffer, citric acid, IPA. All caused the wind-failure / phase-split / pH-lock issues.\n\n' +
+        'MIXING (slow paddle only — high shear scissions PAM):\n\n' +
+        '1) Dry polymer blend: 0.20 g PEO WSR-301 (4 MDa, fresh) + 0.05 g APAM/HPAM 10-20 MDa in a small beaker. Stir dry 30 s to disperse.\n' +
+        '2) Slurry the dry polymer blend into 100 g glycerin. Stir with a DRY spatula 2 min until uniformly dispersed (faint cloudy gel).\n' +
+        '3) In a 2 L bucket: 850 g distilled water + 0.5 g disodium EDTA. Stir until clear.\n' +
+        '4) SLOW PADDLE — NO blender, NO stick mixer. Pour polymer/glycerin slurry into vortex centre over 30 s. Fold gently 5 min. Cover. REST 12 hr undisturbed.\n' +
+        '5) After 12 hr: slow paddle. Add 20 g SLES-70 over 30 s, then 12 g CAPB-30 over 30 s, then 5 g LDAO-30 over 30 s. Fold gently 5 min. No foam in the bucket.\n' +
+        '6) Cover, rest 24-48 hr cool dark. Shelf life 2-3 weeks.\n\n' +
+        'pH should land 7.5-8.0 free-running. NO acid, NO buffer, NO DKP, NO sorbic, NO lactic, NO citric. If pH drops below 7.0 the coacervate-wind-failure mode returns. Pasquet 2022 measured pH neutralisation to 7 hurts lifetime; your original 6.1 specifically hurt wind tolerance.\n\n' +
+        'USE WHEN: calm air, hunting personal records, you want to replicate the 100 ft / 200 ft monster you had before but without the wind death or the overnight phase split. This is the closest evolution of your previous best.\n\n' +
+        'BENCHMARK: run side-by-side with TOP 3 #1 (Fairy HEC) and TOP 3 #2 (AOS Wind-Tolerant) on the same calm day, same wand. The head-to-head decides whether the dual-polymer dishsoap-synergy architecture is still your record-getter, or whether one of the other Top-3 takes over.\n\n' +
+        'NOTE: your original 816 g recipe is preserved separately in this library (further down, with sorbic + lactic + DKP). DO NOT brew that on a windy day or for shelf storage — it will fail. Brew it only for direct head-to-head testing against this corrected version.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled water',                 grams_per_L: 850,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin USP',          grams_per_L: 100,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Disodium EDTA',                   grams_per_L: 0.5,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'PEO WSR-301 (4 MDa, fresh, dry)', grams_per_L: 0.20,  active_g_per_L: 0.20,  short: 'PEO',   skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'APAM / HPAM 10-20 MDa (dry)',     grams_per_L: 0.05,  active_g_per_L: 0.05,  short: 'APAM',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'SLES-70 paste',                   grams_per_L: 20,    active_g_per_L: null,  short: 'SLES',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'CAPB-30',                         grams_per_L: 12,    active_g_per_L: null,  short: 'CAPB',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'LDAO-30 (Ammonyx LO)',            grams_per_L: 5,     active_g_per_L: null,  short: 'LDAO',  skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'World-Class v2-Plus — UNTESTED HYPOTHESIS (NaCl + Aerosil + cetyl alcohol — see Appendix A2)',
+      notes:
+        'WARNING — UNTESTED HYPOTHESIS — Appendix A2 of "obsidian-vault/research/00-world-class-recipe-v2.md". Built on the AOS+APAM architecture (now science-validated and promoted to Section 13 / wind-tolerant variant seed) PLUS three speculative surface-armor add-ons. Each add-on (NaCl, Aerosil, cetyl alcohol) has measured effects in isolated foam-research systems (Bergeron 1999 oscillatory pressures, silica Pickering papers, Mitrinova SLES+CAPB+myristic G\' boost) — but the COMBINATION with AOS+APAM is unmeasured. Predicted fission-survival-to-25-km/h numbers below are speculation, not measurement. Use the Fairy-recreation mainline OR the wind-tolerant variant as your working recipes; brew this only if you want to test the speculative composite armor on top of the wind-tolerant base.\n\n' +
+        'ORIGINAL DESIGN INTENT (preserved for research): v2 base with three surface-armor layers. Target: clean release up to 15 km/h sustained wind; fission-mode survival (bubble splits into 3–10 surviving smaller bubbles) up to 20 km/h gusts. Above 25 km/h no recipe survives outdoors.\n\n' +
+        'CHANGES FROM v2:\n' +
+        '• NaCl 0.5 g/L (food-grade) — pushes AOS micelle ionic strength into oscillatory structural-force regime. Debye screening length compresses to ~4 nm, film organises into discrete micellar stratification layers with ~200 Pa disjoining pressure each. Bergeron 1999 J Phys Condens Matter 11:R215.\n' +
+        '• Aerosil 200 F 5.0 g/L (hydrophilic fumed silica, ~12 nm primary, food-grade) — Pickering-particle armor at the air–water interface. Mechanical jam against rupture during expansion. 0.5 wt% is the optical-clarity upper limit before haze.\n' +
+        '• Cetyl alcohol 3.0 g/L — Marangoni elasticity booster. Pre-melt into glycerin at 60°C (melts at 49°C) BEFORE adding to mix. Forms gel-network co-surfactant layer responding fast to surface-area gradients. Pasquet 2022 mechanism. Mitrinova 2013: surface modulus G > 100 mN/m.\n' +
+        '• HPAM bumped from 0.008 → 0.100 g/L. Exits bridging-flocculation zone, enters steric-stabilisation plateau. Only safe with full EDTA chelation in distilled water; NaCl + cetyl-alcohol armor compensates for any micro-aggregates.\n\n' +
+        'MIXING PROTOCOL (read carefully — 3 changes from v2):\n\n' +
+        '1) Dry polymer blend: 0.126 g aged PEO + 0.054 g fresh PEO + 0.100 g HPAM (NOTE: 12.5× more PAM than v2). Stir 30 s.\n' +
+        '2) Pre-melt cetyl alcohol in glycerin: in a small heat-safe beaker, combine 3 g cetyl alcohol + 80 g glycerin. Heat on hot plate 60°C, 5 min, stir to a pearly suspension. Cool to room temp.\n' +
+        '3) Add 25 g IPA to the cooled cetyl-alcohol/glycerin. Stir into the dry polymer blend to make slurry.\n' +
+        '4) Buffered water: 830 g distilled water in 2 L bucket. Add 1 g DKP, stir to dissolve. Add 0.5 g disodium EDTA, dissolve. Add 0.5 g NaCl, dissolve. Add 5 g Aerosil 200 F under gentle vortex over 60 s. Let disperse 15 min — surface goes milky-white when fully wetted.\n' +
+        '5) Polymer hydration: paddle vortex (NO stick blender). Pour slurry over 30 s. Stir gently 5 min.\n' +
+        '6) Entropic rest 12–24 hr covered.\n' +
+        '7) Surfactant: pour 60 g AOS-40 over 60 s, fold for 5 min.\n' +
+        '8) pH check: 7.4 ± 0.2. Adjust as v2.\n' +
+        '9) Age 24–48 hr more.\n\n' +
+        'VISUAL SIGNATURE: v2-Plus is pearly opalescent (NOT clear). That is the Aerosil + cetyl alcohol working. If it goes fully cloudy, the silica has agglomerated — start over with longer dispersion.\n\n' +
+        'WARNING: only safe in distilled water with full EDTA. Do not attempt with hard tap water.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled water',           grams_per_L: 830,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin',        grams_per_L: 80,    active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Isopropyl alcohol 99%',     grams_per_L: 25,    active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Dipotassium phosphate',     grams_per_L: 1.0,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Disodium EDTA',             grams_per_L: 0.5,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Sodium chloride (food)',    grams_per_L: 0.5,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Aerosil 200 F (silica)',    grams_per_L: 5.0,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Cetyl alcohol (melt in glycerin)', grams_per_L: 3.0, active_g_per_L: null, short: null, skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'PEO WSR-301 aged (dry)',    grams_per_L: 0.126, active_g_per_L: 0.126, short: 'PEO',   skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'PEO WSR-301 fresh (dry)',   grams_per_L: 0.054, active_g_per_L: 0.054, short: 'PEO',   skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'Anionic PAM HMW (dry)',     grams_per_L: 0.100, active_g_per_L: 0.100, short: 'PAM',   skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'AOS-40',                    grams_per_L: 60,    active_g_per_L: null,  short: 'AOS',   skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'World-Class Maximalist — UNTESTED HYPOTHESIS (290 ppm multi-polymer scaffold — see Appendix A3)',
+      notes:
+        'WARNING — UNTESTED HYPOTHESIS — Appendix A3 of "obsidian-vault/research/00-world-class-recipe-v2.md". Frazier 2020 MEASURED that polydisperse beats monodisperse. The extrapolation to specifically FOUR polymers at the specific ppm allocations below is unmeasured. No published recipe uses this scaffold. Built on the AOS architecture base — the general AOS+APAM architecture has been promoted to Section 13 (wind-tolerant variant seed), but this specific four-polymer scaffold remains speculative. Use the Fairy-recreation mainline (HEC/guar/J-Lube seeds) or the wind-tolerant variant (AOS+APAM+PEO seed) as working recipes; brew this only as a research probe of the multi-polymer relaxation-spectrum hypothesis.\n\n' +
+        'ORIGINAL DESIGN INTENT (preserved for research): four polymer chemistries at sub-saturation concentrations to span the relaxation-time spectrum from ~1 ms (Cellosize HEC) through ~10 ms (PEO) to ~100 ms+ (Flopaam HPAM). Frazier/Burton 2020 polydispersity finding taken to its limit: max spectrum width with min total polymer load.\n\n' +
+        'TARGET: still-air laboratory shots where polymer extension is the only thing that matters. Acharya 2020 (PMC7726756) measured 3× extensional viscosity boost (75 → 220 Pa·s) when surfactant goes in. Expected ~30% more linear bubble length than v2 in matched conditions.\n\n' +
+        'WHEN NOT TO USE: gusty wind. The HPAM at 50 ppm is more fragile to shear and Ca-aggregation than v2\'s trace 8 ppm. For wind, use v2 or v2-Plus.\n\n' +
+        'POLYMER ROLES:\n' +
+        '• Polyox WSR-301 (4 MDa, monodisperse-leaning) 150 ppm — reproducible base, slow-hydrating.\n' +
+        '• J-Lube (up to 8 MDa polydisperse PEO in dextrose carrier, 25% active) 160 mg → 40 ppm effective PEO — broad polydisperse tail, fast hydration.\n' +
+        '• Flopaam 3430S (~13 MDa HPAM) 50 ppm — mid-MW anionic scaffold, long-relaxation-time mode. (If you have 18–20 MDa Flopaam 3630S instead, drop to 30 ppm — longer chain but more fragile.)\n' +
+        '• Cellosize QP-100MH HEC (~1.5 MDa nonionic cellulose) 50 ppm — Ca-tolerant supplement, stiff cellulose backbone for intermediate relaxation. Surface-treated grade disperses without lumping.\n\n' +
+        'MIXING PROTOCOL:\n\n' +
+        '1) Dry blend ALL FOUR polymers in a clean dry beaker. Shake gently until visibly uniform.\n' +
+        '2) IPA + glycerin slurry: 25 g IPA + 80 g glycerin into the dry blend. Stir 1 min.\n' +
+        '3) Buffered water: 832.7 g distilled water + 1 g DKP + 0.5 g disodium EDTA. Dissolve fully.\n' +
+        '4) Polymer hydration: paddle vortex (NO stick blender — HPAM scission is the silent killer). Pour slurry over 30 s. Stir gently 2–3 HOURS (longer than v2 — HEC HHR-coating delays hydration deliberately).\n' +
+        '5) Entropic rest 12–24 hr covered.\n' +
+        '6) Surfactant: 60 g AOS-40 over 60 s, fold 5 min.\n' +
+        '7) pH check 7.4 ± 0.2.\n' +
+        '8) Age 24–48 hr more.\n' +
+        '9) CaBER VERIFICATION at T + 36 hr: pull a slow drop from a teaspoon, time the thread until pinch-off. Expect ≥ 2 seconds. ≤ 1 second means the HPAM has shear-degraded or Ca-aggregated — start over with fresher polymer or check the water.\n\n' +
+        'WARNING: distilled water MANDATORY. HPAM cross-links irreversibly with Ca²⁺ — no chelator dose fully prevents this at the 50 ppm level over the 24-hour cure window.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled water',           grams_per_L: 832.7, active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin',        grams_per_L: 80,    active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Isopropyl alcohol 99%',     grams_per_L: 25,    active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Dipotassium phosphate',     grams_per_L: 1.0,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Disodium EDTA',             grams_per_L: 0.5,   active_g_per_L: null,  short: null,    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'Polyox WSR-301 (4 MDa)',    grams_per_L: 0.150, active_g_per_L: 0.150, short: 'PEO',   skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'J-Lube (PEO, dry powder)',  grams_per_L: 0.160, active_g_per_L: 0.040, short: 'J Lube',skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'Flopaam 3430S HPAM (13 MDa)', grams_per_L: 0.050, active_g_per_L: 0.050, short: 'PAM', skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'Cellosize QP-100MH HEC',    grams_per_L: 0.050, active_g_per_L: 0.050, short: 'HEC',   skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'AOS-40',                    grams_per_L: 60,    active_g_per_L: null,  short: 'AOS',   skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'Pure Repulsion v1 — AOS + APAM, pH 8.5 (wind-tolerant test)',
+      notes:
+        'Test recipe based on the "AOS/APAM Repulsion Network Physics" paper in the vault. Hypothesis: bumping APAM from 0.05 g/L to 0.15 g/L AND raising pH from 6.1 to 8.5 flips PAM into rigid-rod conformation, giving oscillatory disjoining pressure (~200 Pa) that resists wind gusts. Designed deliberately WITHOUT CAPB / LDAO to prove the pure-repulsion mechanism before adding bridges.\n\n' +
+        '1) Use deionised or distilled water. Tap water Ca/Mg ions will collapse the PAM network.\n' +
+        '2) Dry-blend the PAM and PEO powders in a clean dry cup.\n' +
+        '3) High-shear vortex the 828 g water. Dump dry blend into the vortex. Max 30 seconds shear — longer shreds the UHMW backbones.\n' +
+        '4) Switch to low-shear paddle. Stir gently 2–3 hours, no foam, no cavitation.\n' +
+        '5) Cover. Entropic rest 12–24 hours undisturbed. Fluid should look water-thin.\n' +
+        '6) Low-shear fold in the AOS-40. Mix until optically clear.\n' +
+        '7) Titrate the sodium bicarbonate in tiny additions while monitoring with a calibrated digital pH meter. Stop at pH 8.5. The 2 g listed is a starting estimate — your real dose depends on your water.\n' +
+        '8) If the mix is too thin after rest, your AOS may be < 40% active. Bump AOS by 10% increments until stretchy.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Deionised water',        grams_per_L: 828,   active_g_per_L: null, short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin',     grams_per_L: 100,   active_g_per_L: null, short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Isopropyl alcohol',      grams_per_L: 10,    active_g_per_L: null, short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Sodium bicarbonate',     grams_per_L: 2,     active_g_per_L: null, short: null,    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'Anionic PAM HMW (dry)',  grams_per_L: 0.15,  active_g_per_L: 0.15, short: 'PAM',   skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'PEO WSR-301 (dry)',      grams_per_L: 0.1,   active_g_per_L: 0.1,  short: 'PEO',   skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'AOS-40',                 grams_per_L: 60,    active_g_per_L: null, short: 'AOS',   skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'Pro Mix RE v1 — AOS + PEO, pH 7.2 (yellow pro-mix clone)',
+      notes:
+        'Reverse-engineered target matching the user\'s commercial pro mix: yellow tinge (AOS-40), water-thin consistency (low shear viscosity, high extensional viscosity), pH 7.2 (sodium-bicarb self-buffered, skin-safe, preservative-friendly). Single polymer (PEO, not PEO+PAM) for simplicity and to isolate the variable from Pure Repulsion v1.\n\n' +
+        'Hypothesis: matches commercial UK pro mixes (likely Supapop / Bubblyheaven / Dr Zigs-class). 6% AOS-40 sits at 2.4% active — the micellar-crowding sweet spot. PEO at 0.1% gives extensional stretchiness with water-like shear viscosity. Bicarb alone lands the pH at ~7.2; no titration needed.\n\n' +
+        '1) Use deionised or distilled water. Tap water Ca/Mg ions soften the film and reduce hard-water foam quality.\n' +
+        '2) In a dry cup, dust the 1 g PEO across the surface of the 10 g IPA — do NOT stir yet. Let it soak 60 seconds, then stir to a slurry. Skipping this step gives fish-eyes.\n' +
+        '3) Vortex 838 g of water gently with a paddle. Pour the PEO/IPA slurry into the vortex centre. Stir slow for 5 min.\n' +
+        '4) Cover. Let it hydrate 4–6 hours minimum (overnight is better). Mix should look water-thin.\n' +
+        '5) Add glycerin, stir to homogeneous.\n' +
+        '6) Sprinkle in sodium bicarbonate. Stir to dissolve.\n' +
+        '7) Pour in AOS-40 with low-shear folding. No foam. Mix until optically clear and faintly straw-coloured.\n' +
+        '8) Check pH with a calibrated digital meter. Should land 7.0–7.5 naturally.\n' +
+        '9) Rest 12–24 hours covered before use.',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Deionised water',        grams_per_L: 838,   active_g_per_L: null, short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin',     grams_per_L: 50,    active_g_per_L: null, short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Isopropyl alcohol',      grams_per_L: 10,    active_g_per_L: null, short: null,    skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Sodium bicarbonate',     grams_per_L: 1,     active_g_per_L: null, short: null,    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'PEO WSR-301 (dry)',      grams_per_L: 1,     active_g_per_L: 1,    short: 'PEO',   skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'AOS-40',                 grams_per_L: 60,    active_g_per_L: null, short: 'AOS',   skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'Beginner — Fairy + bicarb (UK supermarket only)',
+      notes:
+        'Beginner / supermarket-only variant. NOT a world-record recipe — Fairy/bicarb has surfactant impurities and a buffer that brings cornstarch with it. For wind tolerance and giant-bubble work, use a SLES/AOS + PAM/PEO recipe at the correct pH instead. Sources: Pasquet 2022 (arXiv:2209.04435), Burton 2020 (Phys Rev Fluids), Gary Pearlman GWR notes.\n\n' +
+        '1) Slurry: in a dry mug, mix the J-Lube (0.5 g), IPA (15 g) and the 100 g glycerin. Stir with a fork until the white powder is fully wet. The powder will not dissolve — it just needs to be coated so it does not clump when it hits the water.\n' +
+        '2) Add to water: pour tap water into a clean bucket. Stir gently to make a small whirlpool, then pour the slurry into the middle. Stir slowly for 2–3 minutes.\n' +
+        '3) Baking powder: sprinkle in 2 g of baking powder. Stir until dissolved. White sediment on the bottom is cornstarch from the baking powder — ignore it.\n' +
+        '4) Fairy: pour in 40 g of Fairy Liquid (Original) gently. Stir with a slow folding motion. No foam.\n' +
+        '5) Rest 24 hours covered. Peaks at 2–3 days.\n\n' +
+        'Scotland tuning: in high humidity (80%+) with gusts, drop glycerin to 50 g and double J-Lube to 1.0 g (aged 3–6 months if possible).',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Tap water',              grams_per_L: 1000,   active_g_per_L: null, short: null,      skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Vegetable glycerin',     grams_per_L: 100,    active_g_per_L: null, short: null,      skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Isopropyl alcohol 90%+', grams_per_L: 15,     active_g_per_L: null, short: null,      skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Baking powder',          grams_per_L: 2,      active_g_per_L: null, short: null,      skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'J-Lube (dry)',           grams_per_L: 0.5,    active_g_per_L: 0.5,  short: 'J Lube',  skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'Fairy Liquid Original',  grams_per_L: 40,     active_g_per_L: null, short: 'Fairy',   skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: 'ORIGINAL 816 g (REFERENCE ONLY — has wind-failure mode; brew the Top-3 #3 corrected version instead)',
+      notes:
+        'WARNING — REFERENCE / HISTORICAL RECIPE ONLY. This is the original 816 g recipe that produced 100 ft / 200 ft bubbles in calm air but fails in any wind, and recently phase-split overnight due to citric/lactic acid load.\n\n' +
+        'DO NOT brew this for outdoor windy sessions. DO NOT brew this if you want a stable mix that lasts more than a few days.\n\n' +
+        'BREW THE TOP-3 #3 CORRECTED VERSION (separate seed above) INSTEAD. It keeps everything that worked (SLES+CAPB+LDAO+PEO+PAM at 10% glycerin) and removes the three things that failed (sorbic + lactic pH lock at 6.1, total surfactant 3% over Pasquet ceiling, citric chelation).\n\n' +
+        'WHAT WAS WRONG WITH THIS ORIGINAL:\n' +
+        '• pH 6.1 = below CAPB isoelectric 6.25 = CAPB-SLES coacervate = strong in calm, shear-melts in wind (see "obsidian-vault/research/07-816g-recipe-analysis.md").\n' +
+        '• 3.0% total surfactant active = above Pasquet measured 1.5% ceiling.\n' +
+        '• Citric / lactic acid added to chelate = ineffective (citrate log K with Ca²⁺ = 3.5 vs EDTA 10.7) and creates phase split overnight (see "obsidian-vault/research/10-acid-titration-phase-split.md").\n\n' +
+        'WHEN TO BREW THIS: only for direct head-to-head testing against TOP 3 #3 (corrected) on the same calm day, to confirm the corrected version preserves the calm-air bubble size while fixing wind tolerance and shelf stability.\n\n' +
+        '--- ORIGINAL PROTOCOL (preserved for reference) ---\n\n' +
         'SLES baseline. Slurry polymers in IPA, hydrate, rest 1–24 hr, then surfactants.\n\n' +
         '1) Acidified water prep: dissolve DPP and sorbic acid in distilled water; titrate to pH 6.0–6.5 with lactic acid drop-by-drop.\n' +
         '2) Slurry: combine dry PEO + dry PAM into IPA. Stir until clump-free.\n' +
@@ -412,6 +708,18 @@ function seedRecipes() {
         { id: uuid(), role: 'surfactant', label: 'SLES 70% Paste',             grams_per_L: 35.0,  active_g_per_L: null,  short: 'SLES',  skip_convert: false },
         { id: uuid(), role: 'surfactant', label: 'CAPB',                        grams_per_L: 12.0,  active_g_per_L: null,  short: 'CAPB',  skip_convert: false },
         { id: uuid(), role: 'surfactant', label: 'LDAO',                        grams_per_L: 8.0,   active_g_per_L: null,  short: 'LDAO',  skip_convert: false },
+      ],
+    },
+    {
+      id: uuid(),
+      custom_name: '',
+      notes: 'Surfactant: Bio-Terge AS-40 (Alpha Olefin Sulfonate). Water divided into 900 g and 100 g portions. J-Lube measured as dry powder (~1/8 tsp).',
+      rows: [
+        { id: uuid(), role: 'other',      label: 'Distilled Water',             grams_per_L: 1000,  active_g_per_L: null,  short: null,     skip_convert: false },
+        { id: uuid(), role: 'surfactant', label: 'AOS-40 (Bio-Terge AS-40)',    grams_per_L: 40,    active_g_per_L: null,  short: 'AOS',    skip_convert: false },
+        { id: uuid(), role: 'polymer',    label: 'J-Lube (dry)',                grams_per_L: 0.26,  active_g_per_L: 0.26,  short: 'J Lube', skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Citric Acid Monohydrate',     grams_per_L: 0.58,  active_g_per_L: null,  short: null,     skip_convert: false },
+        { id: uuid(), role: 'other',      label: 'Lactic Acid 88%',             grams_per_L: 1.7,   active_g_per_L: null,  short: null,     skip_convert: false },
       ],
     },
   ];
